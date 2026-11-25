@@ -30,7 +30,7 @@
   <!-- HTML5 QR Code Scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-  <!-- QRCode.js Library (รองรับ Canvas และภาษาไทย 100%) -->
+  <!-- QRCode.js Library (รองรับภาษาไทยและ Canvas ป้องกัน Overflow 100%) -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <!-- FontAwesome Icons -->
@@ -95,7 +95,6 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- ตัวเลือกชั้นเรียน (จะซ่อนอัตโนมัติเมื่อเป็นโหมดครูผู้สอน) -->
         <div id="gradeSelectorBox">
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">ชั้นเรียน/กลุ่ม</label>
           <select id="gradeSelect" onchange="loadSchedules()" class="bg-white border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium shadow-sm focus:ring-emerald-500">
@@ -127,7 +126,7 @@
     <div id="teacherBanner" class="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-r-xl flex items-center justify-between text-xs text-emerald-950">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-circle-info text-emerald-600 text-base"></i>
-        <span id="bannerText">หัวหน้าห้องสามารถกดปุ่ม <b>"สร้าง QR ประจำคาบ"</b> เพื่อแสดงบนหน้าจอให้ครูสแกนเข้าสอน</span>
+        <span id="bannerText">หัวหน้าห้องสามารถกดปุ่ม <b>"สร้าง QR คาบนี้"</b> เพื่อให้ครูสแกนและกรอกข้อมูลอัตโนมัติทันที</span>
       </div>
     </div>
 
@@ -198,7 +197,7 @@
       <div class="p-5 flex flex-col items-center">
         <div id="reader" class="w-full h-80 bg-slate-950 rounded-2xl overflow-hidden mb-3 border-2 border-emerald-500 shadow-inner"></div>
         <p class="text-xs text-slate-500 text-center flex items-center gap-1.5">
-          <i class="fa-solid fa-arrows-to-eye text-emerald-600"></i> ส่องกล้องไปที่ QR Code บนหน้าจอหัวหน้าห้องเพื่อบันทึกการสอนทันที
+          <i class="fa-solid fa-wand-magic-sparkles text-emerald-600"></i> เมื่อสแกน ข้อมูลวิชาและคาบสอนจะถูกกรอกลงในฟอร์มอัตโนมัติทันที
         </p>
       </div>
 
@@ -208,7 +207,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน (Auto-fill ยกเว้นจุดที่ครูต้องกรอก) ================= -->
+  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน (Autofill เต็มรูปแบบ) ================= -->
   <div id="teachingLogModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
       <div class="p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between sticky top-0 z-10 shadow">
@@ -225,24 +224,26 @@
 
       <form id="teachingForm" onsubmit="submitTeachingLog(event)" class="p-5 space-y-4">
         
-        <!-- ส่วนที่ 1: ข้อมูลที่ระบบกรอกให้อัตโนมัติ (Readonly) -->
+        <!-- ส่วนที่ 1: ข้อมูลที่กรอกให้อัตโนมัติจาก QR Code -->
         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-              <i class="fa-solid fa-circle-check text-emerald-600"></i> ข้อมูลคาบสอน (ระบบดึงให้อัตโนมัติ)
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> ข้อมูลดึงจาก QR Code อัตโนมัติ
             </span>
-            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Auto-filled</span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <i class="fa-solid fa-bolt"></i> Auto-filled
+            </span>
           </div>
 
           <div class="grid grid-cols-2 gap-3 text-xs">
             <div>
               <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">ครูผู้สอน</label>
-              <input type="text" id="formTeacherName" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
+              <input type="text" id="formTeacherName" readonly class="w-full bg-slate-200/80 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
               <input type="hidden" id="formTeacherId">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">ชั้นเรียน / วันที่สอน</label>
-              <input type="text" id="formGradeDayDisplay" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
+              <input type="text" id="formGradeDayDisplay" readonly class="w-full bg-slate-200/80 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
               <input type="hidden" id="formGrade">
               <input type="hidden" id="formDay">
             </div>
@@ -251,11 +252,11 @@
           <div class="grid grid-cols-3 gap-2 text-xs">
             <div>
               <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">คาบที่</label>
-              <input type="text" id="formPeriod" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-2 py-1.5 font-bold text-slate-700 text-center focus:outline-none cursor-not-allowed">
+              <input type="text" id="formPeriod" readonly class="w-full bg-slate-200/80 border border-slate-300 rounded-xl px-2 py-1.5 font-bold text-slate-700 text-center focus:outline-none cursor-not-allowed">
             </div>
             <div class="col-span-2">
               <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">รหัสและชื่อวิชา</label>
-              <input type="text" id="formSubjectDisplay" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold text-emerald-700 truncate focus:outline-none cursor-not-allowed">
+              <input type="text" id="formSubjectDisplay" readonly class="w-full bg-slate-200/80 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold text-emerald-700 truncate focus:outline-none cursor-not-allowed">
               <input type="hidden" id="formSubjectCode">
               <input type="hidden" id="formSubjectName">
             </div>
@@ -263,17 +264,19 @@
         </div>
 
         <!-- ส่วนที่ 2: จุดที่ครูต้องกรอกด้วยตนเอง -->
-        <div class="bg-amber-50/60 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
+        <div class="bg-amber-50/70 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            <span class="text-xs font-bold text-amber-900">เฉพาะจุดด้านล่างนี้ที่ครูผู้สอนต้องกรอก:</span>
+            <span class="text-xs font-bold text-amber-900">กรุณากรอกข้อมูลการสอนในคาบนี้:</span>
           </div>
 
+          <!-- หัวข้อที่สอน -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">1. หัวข้อ / เนื้อหาที่ทำการสอนในคาบนี้ *</label>
-            <input type="text" id="formTopic" required placeholder="เช่น หน่วยที่ 3 การสร้างตารางและการคำนวณสูตร" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium shadow-sm">
+            <input type="text" id="formTopic" required placeholder="เช่น การสร้างฟอร์มและการดึงข้อมูลด้วย Apps Script" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium shadow-sm">
           </div>
 
+          <!-- เช็คยอดนักเรียน -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">2. เช็คจำนวนนักเรียนในคาบนี้</label>
             <div class="grid grid-cols-3 gap-2.5">
@@ -292,9 +295,10 @@
             </div>
           </div>
 
+          <!-- หมายเหตุ -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">3. หมายเหตุ / พฤติกรรมนักเรียน (ถ้ามี)</label>
-            <textarea id="formNote" rows="2" placeholder="เช่น การมีส่วนร่วมดีมาก, มอบหมายใบงานที่ 3" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-emerald-500"></textarea>
+            <textarea id="formNote" rows="2" placeholder="เช่น ตั้งใจเรียนดี, ส่งงานครบทุกคน" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-emerald-500"></textarea>
           </div>
         </div>
 
@@ -308,30 +312,43 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ ================= -->
+  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ (บรรจุข้อมูล Autofill ครบถ้วน) ================= -->
   <div id="qrGeneratorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-center p-6">
       <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">QR Code ประจำคาบเรียน</span>
+        <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full flex items-center gap-1">
+          <i class="fa-solid fa-qrcode"></i> QR Code บันทึกการสอน
+        </span>
         <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-600 text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <h3 id="qrModalSubject" class="font-bold text-slate-800 text-sm sm:text-base mb-1">ชื่อวิชา</h3>
-      <p id="qrModalTeacher" class="text-xs text-slate-500 mb-4">ผู้สอน: ...</p>
+      <p id="qrModalTeacher" class="text-xs text-slate-500 mb-3">ผู้สอน: ...</p>
 
+      <!-- ที่วาด QR Code ผ่าน Canvas -->
       <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center mx-auto mb-3 shadow-inner">
         <canvas id="qrcodeCanvas"></canvas>
       </div>
 
-      <div class="text-[11px] text-slate-400 mb-4">
-        หัวหน้าห้องเปิดหน้าจอนี้ให้ครูสแกนเข้าบันทึกการสอน
+      <div class="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl text-[11px] mb-4 text-left space-y-0.5 border border-emerald-100">
+        <div class="font-bold flex items-center gap-1 text-emerald-900">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> ข้อมูลที่บันทึกใน QR Code นี้:
+        </div>
+        <div id="qrDetailList" class="text-slate-600 text-[10px] pl-3">
+          - รหัสวิชา, ชื่อวิชา, ครูผู้สอน, คาบเรียน, ชั้นเรียน
+        </div>
       </div>
 
-      <button onclick="closeQrModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs">
-        ปิดหน้าต่าง
-      </button>
+      <div class="flex gap-2">
+        <button onclick="downloadQrImage()" class="w-1/2 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded-xl text-xs flex items-center justify-center gap-1 transition">
+          <i class="fa-solid fa-download"></i> โหลดรูป QR
+        </button>
+        <button onclick="closeQrModal()" class="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
     </div>
   </div>
 
@@ -459,7 +476,7 @@
   </div>
 
 
-  <!-- ================= JAVASCRIPT ================= -->
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTb6E8u-W8oNaAP42Af-4T42lb7mmKpF1cxm3vcyYmlc_Ffm5Ex2Ywz2y55Ru1DQpn/exec";
 
@@ -528,9 +545,8 @@
           badge.classList.remove('hidden');
           document.getElementById('badgeTeacherName').textContent = `${currentTeacher.name} (${currentTeacher.id})`;
 
-          // ปรับเข้าสู่โหมดครูผู้สอน
           document.getElementById('gradeSelectorBox').classList.add('hidden');
-          document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> (แสดงเฉพาะวิชาที่คุณสอนทุกชั้นเรียน เรียงตามคาบ)`;
+          document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> (แสดงวิชาที่คุณสอนทุกชั้นเรียน เรียงตามคาบ)`;
           document.getElementById('scheduleHeaderTitle').textContent = `ตารางสอนของ ${currentTeacher.name}:`;
 
           Swal.fire({
@@ -642,25 +658,37 @@
     }
 
     /**
-     * สร้าง QR Code ด้วย Canvas ป้องกัน Overflow
+     * 1. สร้าง QR CODE โดยนำข้อมูล AUTOFILL ทั้งหมดมาบรรจุไว้ใน QR CODE
      */
     function generateScheduleQr(index) {
       const item = currentSchedules[index];
       
+      // รวบรวมข้อมูล Autofill ทั้งหมดลงใน Payload
       const qrPayload = {
-        c: item.subjectCode,
-        n: item.subjectName,
-        t: item.teacher,
-        g: item.grade,
-        d: item.day,
-        p: item.period
+        type: "TEACHING_AUTOFILL",
+        subjectCode: item.subjectCode || "",
+        subjectName: item.subjectName || "",
+        teacher: item.teacher || "",
+        teacherId: currentTeacher ? currentTeacher.id : "",
+        grade: item.grade || "",
+        day: item.day || "",
+        period: item.period || 1,
+        span: item.span || 1,
+        term: item.term || ""
       };
 
       document.getElementById('qrModalSubject').textContent = `${item.subjectCode} ${item.subjectName}`;
       document.getElementById('qrModalTeacher').textContent = `ผู้สอน: ${item.teacher} | ชั้น ${item.grade} คาบที่ ${item.period}`;
+      
+      document.getElementById('qrDetailList').innerHTML = `
+        • <b>วิชา:</b> ${item.subjectCode} ${item.subjectName}<br>
+        • <b>ผู้สอน:</b> ${item.teacher}<br>
+        • <b>คาบเรียน:</b> คาบที่ ${item.period} (${item.span} คาบ) | ชั้น ${item.grade} (วัน${item.day})
+      `;
 
       const canvas = document.getElementById('qrcodeCanvas');
       
+      // แปลงข้อมูล Autofill ทั้งก้อนลงใน QR Code
       QRCode.toCanvas(canvas, JSON.stringify(qrPayload), {
         width: 220,
         margin: 2,
@@ -682,7 +710,18 @@
     }
 
     /**
-     * กล้องสแกน QR Code
+     * ดาวน์โหลดรูป QR Code
+     */
+    function downloadQrImage() {
+      const canvas = document.getElementById('qrcodeCanvas');
+      const link = document.createElement('a');
+      link.download = `QR_${document.getElementById('qrModalSubject').textContent}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    /**
+     * 2. กล้องสแกน QR Code
      */
     function openScannerModal() {
       document.getElementById('scannerModal').classList.remove('hidden');
@@ -718,18 +757,24 @@
       }
     }
 
+    /**
+     * 3. เมื่อสแกน QR Code สำเร็จ: นำข้อมูล AUTOFILL จาก QR มากรอกลงฟอร์มทันที!
+     */
     function handleScanSuccess(decodedText) {
       closeScannerModal();
       try {
         const data = JSON.parse(decodedText);
         
-        const sCode = data.c || data.subjectCode || '';
-        const sName = data.n || data.subjectName || '';
-        const sTeacher = data.t || data.teacher || '';
-        const sGrade = data.g || data.grade || '';
-        const sDay = data.d || data.day || '';
-        const sPeriod = data.p || data.period || '';
+        // ดึงค่า Autofill ทั้งหมดจาก QR Code
+        const sCode = data.subjectCode || data.c || '';
+        const sName = data.subjectName || data.n || '';
+        const sTeacher = data.teacher || data.t || '';
+        const sGrade = data.grade || data.g || '';
+        const sDay = data.day || data.d || '';
+        const sPeriod = data.period || data.p || '';
+        const sTeacherId = data.teacherId || '';
 
+        // กรอกลงช่องซ่อนและช่องแสดงผลอัตโนมัติ
         document.getElementById('formSubjectCode').value = sCode;
         document.getElementById('formSubjectName').value = sName;
         document.getElementById('formGrade').value = sGrade;
@@ -740,21 +785,40 @@
         document.getElementById('formGradeDayDisplay').value = `${sGrade} (วัน${sDay})`;
         document.getElementById('modalSubjectSub').textContent = `${sCode} - ${sName}`;
 
+        // จัดการชื่อครูผู้สอน
         if (currentTeacher) {
-          document.getElementById('formTeacherId').value = currentTeacher.id || '';
-          document.getElementById('formTeacherName').value = currentTeacher.name || '';
+          document.getElementById('formTeacherId').value = currentTeacher.id || sTeacherId;
+          document.getElementById('formTeacherName').value = currentTeacher.name || sTeacher;
         } else {
-          document.getElementById('formTeacherId').value = "-";
-          document.getElementById('formTeacherName').value = sTeacher;
+          document.getElementById('formTeacherId').value = sTeacherId || '-';
+          document.getElementById('formTeacherName').value = sTeacher || '-';
         }
 
+        // รีเซ็ตเฉพาะจุดที่ครูต้องพิมพ์เอง
         document.getElementById('formTopic').value = "";
         document.getElementById('formNote').value = "";
         document.getElementById('formTotal').value = 25;
         document.getElementById('formPresent').value = 25;
         document.getElementById('formAbsent').value = 0;
 
+        // เปิด Modal บันทึกการสอน
         document.getElementById('teachingLogModal').classList.remove('hidden');
+
+        // แจ้งเตือนสแกนสำเร็จ และโฟกัสไปที่ช่องหัวข้อที่สอนทันที
+        Swal.fire({
+          icon: 'success',
+          title: 'สแกนสำเร็จ!',
+          text: `กรอกข้อมูลวิชา ${sName} คาบที่ ${sPeriod} ให้เรียบร้อยแล้ว`,
+          timer: 1600,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+
+        setTimeout(() => {
+          document.getElementById('formTopic').focus();
+        }, 350);
+
       } catch (err) {
         Swal.fire({
           icon: 'warning',
@@ -789,6 +853,9 @@
       document.getElementById('formAbsent').value = absent;
     }
 
+    /**
+     * ส่งข้อมูลบันทึกการสอนไปยัง Google Sheets
+     */
     async function submitTeachingLog(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitTeaching');
