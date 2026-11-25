@@ -27,10 +27,10 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- HTML5 QR Code Scanner (กล้องสแกน) -->
+  <!-- HTML5 QR Code Scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-  <!-- QRCode.js Library (ตัวใหม่ เสถียร ไม่เกิด Code Length Overflow และรองรับภาษาไทย 100%) -->
+  <!-- QRCode.js Library (รองรับ Canvas และภาษาไทย 100%) -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <!-- FontAwesome Icons -->
@@ -73,10 +73,10 @@
         </div>
       </div>
 
-      <!-- ข้อมูลครูที่ Login ผ่าน ?id=... -->
+      <!-- ข้อมูลครูที่ Login -->
       <div id="teacherProfileBadge" class="hidden flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 text-xs">
         <i class="fa-solid fa-circle-user text-emerald-300 text-sm"></i>
-        <span id="badgeTeacherName" class="font-bold">กำลังตรวจสอบ...</span>
+        <span id="badgeTeacherName" class="font-bold">กำลังโหลด...</span>
       </div>
     </div>
   </header>
@@ -95,7 +95,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- ตัวเลือกชั้นเรียน (จะถูกซ่อนถ้าอยู่ในโหมดครูผู้สอน) -->
+        <!-- ตัวเลือกชั้นเรียน (จะซ่อนอัตโนมัติเมื่อเป็นโหมดครูผู้สอน) -->
         <div id="gradeSelectorBox">
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">ชั้นเรียน/กลุ่ม</label>
           <select id="gradeSelect" onchange="loadSchedules()" class="bg-white border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium shadow-sm focus:ring-emerald-500">
@@ -164,7 +164,7 @@
         <span class="text-[11px] font-semibold">แจ้งลา/สอนแทน</span>
       </button>
 
-      <!-- ปุ่มตรงกลาง: สแกน QR CODE (ปุ่มเด่นตรงกลาง) -->
+      <!-- ปุ่มตรงกลาง: สแกน QR CODE (เด่นตรงกลาง) -->
       <div class="relative -top-4">
         <button onclick="openScannerModal()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex flex-col items-center justify-center shadow-lg hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all border-4 border-white">
           <i class="fa-solid fa-qrcode text-2xl"></i>
@@ -183,7 +183,7 @@
     </div>
   </nav>
 
-  <!-- ================= MODAL 1: กล้อง HTML5 QR SCANNER (ขยายพื้นที่กว้างขึ้น) ================= -->
+  <!-- ================= MODAL 1: กล้อง HTML5 QR SCANNER ================= -->
   <div id="scannerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
       <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
@@ -196,7 +196,6 @@
       </div>
 
       <div class="p-5 flex flex-col items-center">
-        <!-- กรอบกล้องขนาดใหญ่ -->
         <div id="reader" class="w-full h-80 bg-slate-950 rounded-2xl overflow-hidden mb-3 border-2 border-emerald-500 shadow-inner"></div>
         <p class="text-xs text-slate-500 text-center flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-to-eye text-emerald-600"></i> ส่องกล้องไปที่ QR Code บนหน้าจอหัวหน้าห้องเพื่อบันทึกการสอนทันที
@@ -209,7 +208,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน (กว้างขึ้น + Auto-fill ยกเว้นจุดที่ครูต้องกรอก) ================= -->
+  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน (Auto-fill ยกเว้นจุดที่ครูต้องกรอก) ================= -->
   <div id="teachingLogModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
       <div class="p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between sticky top-0 z-10 shadow">
@@ -263,20 +262,18 @@
           </div>
         </div>
 
-        <!-- ส่วนที่ 2: จุดที่ครูต้องกรอกด้วยตนเอง (เด่นชัด) -->
+        <!-- ส่วนที่ 2: จุดที่ครูต้องกรอกด้วยตนเอง -->
         <div class="bg-amber-50/60 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
             <span class="text-xs font-bold text-amber-900">เฉพาะจุดด้านล่างนี้ที่ครูผู้สอนต้องกรอก:</span>
           </div>
 
-          <!-- หัวข้อที่สอน -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">1. หัวข้อ / เนื้อหาที่ทำการสอนในคาบนี้ *</label>
             <input type="text" id="formTopic" required placeholder="เช่น หน่วยที่ 3 การสร้างตารางและการคำนวณสูตร" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium shadow-sm">
           </div>
 
-          <!-- ยอดนักเรียน -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">2. เช็คจำนวนนักเรียนในคาบนี้</label>
             <div class="grid grid-cols-3 gap-2.5">
@@ -295,7 +292,6 @@
             </div>
           </div>
 
-          <!-- หมายเหตุ -->
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">3. หมายเหตุ / พฤติกรรมนักเรียน (ถ้ามี)</label>
             <textarea id="formNote" rows="2" placeholder="เช่น การมีส่วนร่วมดีมาก, มอบหมายใบงานที่ 3" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-emerald-500"></textarea>
@@ -312,7 +308,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ (แก้บั๊ก Overflow ด้วย Canvas) ================= -->
+  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ ================= -->
   <div id="qrGeneratorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-center p-6">
       <div class="flex justify-between items-center mb-3">
@@ -325,7 +321,6 @@
       <h3 id="qrModalSubject" class="font-bold text-slate-800 text-sm sm:text-base mb-1">ชื่อวิชา</h3>
       <p id="qrModalTeacher" class="text-xs text-slate-500 mb-4">ผู้สอน: ...</p>
 
-      <!-- ที่วาด QR Code ผ่าน Canvas ไร้ข้อผิดพลาด -->
       <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center mx-auto mb-3 shadow-inner">
         <canvas id="qrcodeCanvas"></canvas>
       </div>
@@ -468,7 +463,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTb6E8u-W8oNaAP42Af-4T42lb7mmKpF1cxm3vcyYmlc_Ffm5Ex2Ywz2y55Ru1DQpn/exec";
 
-    let currentTeacher = null; // ข้อมูลครูที่ตรวจสอบผ่าน ?id=
+    let currentTeacher = null;
     let currentSchedules = [];
     let html5QrCode = null;
 
@@ -514,7 +509,7 @@
     }
 
     /**
-     * ตรวจสอบรหัสครูจาก URL: ?id=รหัสครู หรือ Email
+     * ตรวจสอบรหัสครูจาก URL: ?id=
      */
     async function checkTeacherFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -529,13 +524,12 @@
         if (result.status === "success" && result.teacher) {
           currentTeacher = result.teacher;
           
-          // แสดง Badge ข้อมูลครู
           const badge = document.getElementById('teacherProfileBadge');
           badge.classList.remove('hidden');
           document.getElementById('badgeTeacherName').textContent = `${currentTeacher.name} (${currentTeacher.id})`;
 
-          // ปรับ Header เป็นโหมดครูผู้สอน
-          document.getElementById('gradeSelectorBox').classList.add('hidden'); // ซ่อนตัวเลือกห้อง เพื่อดึงทุกห้องของครูท่านนี้
+          // ปรับเข้าสู่โหมดครูผู้สอน
+          document.getElementById('gradeSelectorBox').classList.add('hidden');
           document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> (แสดงเฉพาะวิชาที่คุณสอนทุกชั้นเรียน เรียงตามคาบ)`;
           document.getElementById('scheduleHeaderTitle').textContent = `ตารางสอนของ ${currentTeacher.name}:`;
 
@@ -575,11 +569,9 @@
       try {
         let apiUrl = `${SCRIPT_URL}?action=getSchedules&day=${encodeURIComponent(day)}`;
 
-        // ถ้าล็อกอินครูมา ให้ส่งชื่อและรหัสครูไปกรอง (เพื่อดึงทุกชั้นของครูคนนี้ และเรียงตามคาบ)
         if (currentTeacher) {
           apiUrl += `&teacher=${encodeURIComponent(currentTeacher.name)}&teacherId=${encodeURIComponent(currentTeacher.id)}`;
         } else {
-          // โหมดหัวหน้าห้อง ดึงตามชั้นเรียน
           apiUrl += `&grade=${encodeURIComponent(grade)}`;
         }
 
@@ -595,7 +587,7 @@
             <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200">
               <i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-2"></i>
               <p class="text-sm font-bold text-slate-600">ไม่มีตารางสอนในวัน${day}</p>
-              <p class="text-xs text-slate-400 mt-1">ไม่พบข้อมูลรายวิชาในฐานข้อมูลชีต Schedules</p>
+              <p class="text-xs text-slate-400 mt-1">ไม่พบวิชาที่คุณสอนในวันดังกล่าวตามข้อมูลในชีต</p>
             </div>
           `;
           countBadge.textContent = "0 คาบ";
@@ -650,12 +642,11 @@
     }
 
     /**
-     * สร้าง QR Code ด้วย Canvas ป้องกัน Overflow 100%
+     * สร้าง QR Code ด้วย Canvas ป้องกัน Overflow
      */
     function generateScheduleQr(index) {
       const item = currentSchedules[index];
       
-      // สร้างข้อมูลขนาดกะทัดรัด
       const qrPayload = {
         c: item.subjectCode,
         n: item.subjectName,
@@ -670,7 +661,6 @@
 
       const canvas = document.getElementById('qrcodeCanvas');
       
-      // เรียกใช้งาน QRCode.toCanvas (มาตรฐาน ปลอดภัย ไม่เกิด Overflow)
       QRCode.toCanvas(canvas, JSON.stringify(qrPayload), {
         width: 220,
         margin: 2,
@@ -681,11 +671,6 @@
       }, function (error) {
         if (error) {
           console.error("สร้าง QR Code ล้มเหลว:", error);
-          Swal.fire({
-            icon: 'error',
-            title: 'สร้าง QR ไม่สำเร็จ',
-            text: error.toString()
-          });
         }
       });
 
@@ -733,15 +718,11 @@
       }
     }
 
-    /**
-     * ประมวลผลผลลัพธ์จากการสแกนและ Auto-fill ฟอร์ม
-     */
     function handleScanSuccess(decodedText) {
       closeScannerModal();
       try {
         const data = JSON.parse(decodedText);
         
-        // รองรับทั้งคีย์ย่อและคีย์เต็ม
         const sCode = data.c || data.subjectCode || '';
         const sName = data.n || data.subjectName || '';
         const sTeacher = data.t || data.teacher || '';
@@ -749,7 +730,6 @@
         const sDay = data.d || data.day || '';
         const sPeriod = data.p || data.period || '';
 
-        // Auto-fill ข้อมูลที่ไม่ต้องให้ครูกรอก
         document.getElementById('formSubjectCode').value = sCode;
         document.getElementById('formSubjectName').value = sName;
         document.getElementById('formGrade').value = sGrade;
@@ -768,7 +748,6 @@
           document.getElementById('formTeacherName').value = sTeacher;
         }
 
-        // รีเซ็ตจุดที่ครูต้องกรอกให้พร้อมพิมพ์
         document.getElementById('formTopic').value = "";
         document.getElementById('formNote').value = "";
         document.getElementById('formTotal').value = 25;
@@ -810,9 +789,6 @@
       document.getElementById('formAbsent').value = absent;
     }
 
-    /**
-     * ส่งข้อมูลบันทึกการสอน
-     */
     async function submitTeachingLog(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitTeaching');
@@ -864,9 +840,6 @@
       }
     }
 
-    /**
-     * จัดการ Modal ครูสอนแทน
-     */
     function openSubstituteModal() {
       if (currentTeacher) {
         document.getElementById('subOriginalTeacher').value = currentTeacher.name;
@@ -926,9 +899,6 @@
       }
     }
 
-    /**
-     * ดึงประวัติการสอนย้อนหลัง
-     */
     async function openDashboardModal() {
       document.getElementById('dashboardModal').classList.remove('hidden');
       const tableBody = document.getElementById('historyTableBody');
