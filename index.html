@@ -334,4 +334,690 @@
         <div id="qrcodeContainer" class="flex items-center justify-center"></div>
       </div>
 
-      <div class="bg-emerald-50 text-emerald-80
+      <div class="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl text-[11px] mb-4 text-left space-y-0.5 border border-emerald-100">
+        <div class="font-bold flex items-center gap-1 text-emerald-900">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> บรรจุข้อมูล Autofill ครบถ้วน:
+        </div>
+        <div id="qrDetailList" class="text-slate-600 text-[10px] pl-3">
+          - รหัสวิชา, ชื่อวิชา, ครูผู้สอน, คาบเรียน, ชั้นเรียน
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="downloadQrImage()" class="w-1/2 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded-xl text-xs flex items-center justify-center gap-1 transition">
+          <i class="fa-solid fa-download"></i> โหลดรูป QR
+        </button>
+        <button onclick="closeQrModal()" class="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 4: แจ้งลา / ครูสอนแทน ================= -->
+  <div id="substituteModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div class="p-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between sticky top-0 z-10">
+        <h3 class="font-bold flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-hand-holding-hand"></i> แจ้งลา / กำหนดครูสอนแทน
+        </h3>
+        <button onclick="closeSubstituteModal()" class="text-white/80 hover:text-white text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="substituteForm" onsubmit="submitSubstitute(event)" class="p-5 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">วันที่ลา/สอนแทน *</label>
+            <input type="date" id="subDate" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">ภาคเรียน (Term)</label>
+            <input type="text" id="subTerm" value="2/2569" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">ครูผู้สอนเดิม (ผู้ขอลา) *</label>
+          <input type="text" id="subOriginalTeacher" placeholder="เช่น อ.เอกวิทย์ สมาน" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">ครูผู้สอนแทน *</label>
+          <input type="text" id="subNewTeacher" placeholder="ระบุชื่อครูที่มาสอนแทน" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">ชั้นเรียน</label>
+            <input type="text" id="subGrade" placeholder="ปวช.1/1" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">คาบที่</label>
+            <input type="number" id="subPeriod" placeholder="3" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">จำนวนคาบ</label>
+            <input type="number" id="subSpan" value="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">รหัสวิชา</label>
+          <input type="text" id="subSubjectCode" placeholder="เช่น 21910-2008" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">เหตุผลการลา</label>
+          <input type="text" id="subReason" placeholder="เช่น ลากิจ, ไปราชการ" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeSubstituteModal()" class="w-1/3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs">ยกเลิก</button>
+          <button type="submit" id="btnSubmitSub" class="w-2/3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-paper-plane"></i> บันทึกข้อมูลสอนแทน
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 5: แดชบอร์ดสรุปประวัติย้อนหลัง ================= -->
+  <div id="dashboardModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+        <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base">
+          <i class="fa-solid fa-clock-rotate-left"></i> ประวัติและสถิติการสอนย้อนหลัง
+        </h3>
+        <button onclick="closeDashboardModal()" class="text-white/80 hover:text-white text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 p-4 bg-slate-50 border-b border-slate-200 text-center">
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+          <div class="text-[11px] text-slate-400 font-bold">บันทึกทั้งหมด</div>
+          <div id="statTotalLogs" class="text-xl font-bold text-blue-600 font-mono">0</div>
+        </div>
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+          <div class="text-[11px] text-slate-400 font-bold">เข้าสอนแล้ว</div>
+          <div id="statNormalLogs" class="text-xl font-bold text-emerald-600 font-mono">0</div>
+        </div>
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+          <div class="text-[11px] text-slate-400 font-bold">สอนแทน</div>
+          <div id="statSubLogs" class="text-xl font-bold text-amber-500 font-mono">0</div>
+        </div>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase font-semibold">
+                <th class="p-2.5 rounded-l-lg">วัน-เวลา</th>
+                <th class="p-2.5">วิชา / ชั้น</th>
+                <th class="p-2.5">ครูผู้สอน</th>
+                <th class="p-2.5">หัวข้อที่สอน</th>
+                <th class="p-2.5 rounded-r-lg text-center">มาเรียน</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="5" class="text-center py-6 text-slate-400">กำลังดึงข้อมูล...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border-t flex justify-end">
+        <button onclick="closeDashboardModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTb6E8u-W8oNaAP42Af-4T42lb7mmKpF1cxm3vcyYmlc_Ffm5Ex2Ywz2y55Ru1DQpn/exec";
+
+    let currentTeacher = null;
+    let currentSchedules = [];
+    let html5QrCode = null;
+    let lastQrImageData = "";
+
+    const DAY_MAP = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      initClock();
+      initDefaultDay();
+      document.getElementById('subDate').valueAsDate = new Date();
+      await checkTeacherFromUrl();
+      loadSchedules();
+    });
+
+    function initClock() {
+      const clockEl = document.getElementById('liveClock');
+      const dateEl = document.getElementById('liveDate');
+
+      function update() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateEl.textContent = now.toLocaleDateString('th-TH', options);
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    function initDefaultDay() {
+      const dayIndex = new Date().getDay();
+      const currentDayName = DAY_MAP[dayIndex];
+      const daySelect = document.getElementById('daySelect');
+      
+      for (let i = 0; i < daySelect.options.length; i++) {
+        if (daySelect.options[i].value === currentDayName) {
+          daySelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+
+    /**
+     * ตรวจสอบรหัสครูจาก URL: ?id=
+     */
+    async function checkTeacherFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const teacherId = urlParams.get('id');
+
+      if (!teacherId) return;
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?id=${encodeURIComponent(teacherId)}`);
+        const result = await res.json();
+
+        if (result.status === "success" && result.teacher) {
+          currentTeacher = result.teacher;
+          
+          const badge = document.getElementById('teacherProfileBadge');
+          badge.classList.remove('hidden');
+          document.getElementById('badgeTeacherName').textContent = `${currentTeacher.name} (${currentTeacher.id})`;
+
+          document.getElementById('gradeSelectorBox').classList.add('hidden');
+          document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> (แสดงวิชาที่คุณสอนทุกชั้นเรียน เรียงตามคาบ)`;
+          document.getElementById('scheduleHeaderTitle').textContent = `ตารางสอนของ ${currentTeacher.name}:`;
+
+          Swal.fire({
+            icon: 'success',
+            title: `ยินดีต้อนรับ`,
+            text: `${currentTeacher.name}`,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
+        }
+      } catch (e) {
+        console.error("เช็ครหัสครูล้มเหลว:", e);
+      }
+    }
+
+    /**
+     * ดึงตารางสอนจาก Google Sheets จริง
+     */
+    async function loadSchedules() {
+      const day = document.getElementById('daySelect').value;
+      const grade = document.getElementById('gradeSelect').value;
+      const grid = document.getElementById('schedulesGrid');
+      const countBadge = document.getElementById('scheduleCountBadge');
+      
+      document.getElementById('scheduleDayTitle').textContent = `วัน${day}`;
+
+      grid.innerHTML = `
+        <div class="col-span-full py-8 text-center text-slate-400">
+          <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-600"></i>
+          <p class="text-xs">กำลังโหลดตารางสอน...</p>
+        </div>
+      `;
+
+      try {
+        let apiUrl = `${SCRIPT_URL}?action=getSchedules&day=${encodeURIComponent(day)}`;
+
+        if (currentTeacher) {
+          apiUrl += `&teacher=${encodeURIComponent(currentTeacher.name)}&teacherId=${encodeURIComponent(currentTeacher.id)}`;
+        } else {
+          apiUrl += `&grade=${encodeURIComponent(grade)}`;
+        }
+
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.status === "success" && data.schedules && data.schedules.length > 0) {
+          currentSchedules = data.schedules;
+          renderSchedulesGrid(currentSchedules);
+        } else {
+          currentSchedules = [];
+          grid.innerHTML = `
+            <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200">
+              <i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-2"></i>
+              <p class="text-sm font-bold text-slate-600">ไม่มีตารางสอนในวัน${day}</p>
+              <p class="text-xs text-slate-400 mt-1">ไม่พบวิชาที่คุณสอนในวันดังกล่าวตามข้อมูลในชีต</p>
+            </div>
+          `;
+          countBadge.textContent = "0 คาบ";
+        }
+      } catch (err) {
+        console.error("API Error:", err);
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-8 text-rose-500 text-xs">
+            เกิดข้อผิดพลาดในการโหลดข้อมูลจาก Google Sheets
+          </div>
+        `;
+      }
+    }
+
+    /**
+     * วาดการ์ดตารางสอน
+     */
+    function renderSchedulesGrid(items) {
+      const grid = document.getElementById('schedulesGrid');
+      const countBadge = document.getElementById('scheduleCountBadge');
+      countBadge.textContent = `${items.length} คาบ`;
+
+      grid.innerHTML = items.map((item, index) => {
+        return `
+          <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <i class="fa-solid fa-bell"></i> คาบที่ ${item.period} (${item.span} คาบ)
+                </span>
+                <span class="text-xs font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">${item.grade}</span>
+              </div>
+              <h3 class="font-bold text-slate-800 text-sm mb-1">${item.subjectName}</h3>
+              <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chalkboard-user text-emerald-600"></i> ${item.teacher}</span>
+                <span class="font-mono text-slate-400 text-[11px]">${item.subjectCode}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button onclick="generateScheduleQr(${index})" class="px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+                <i class="fa-solid fa-qrcode"></i> สร้าง QR คาบนี้
+              </button>
+
+              <button onclick="openDirectTeachingForm(${index})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                <i class="fa-solid fa-pen-to-square"></i> บันทึกสอน
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * สร้าง QR Code อัตโนมัติ (ปลอดภัย ไร้บั๊ก ReferenceError และมี Fallback)
+     */
+    function generateScheduleQr(index) {
+      const item = currentSchedules[index];
+      
+      // บรรจุข้อมูล Autofill ทั้งหมด
+      const qrPayload = {
+        code: item.subjectCode || "",
+        name: item.subjectName || "",
+        teacher: item.teacher || "",
+        teacherId: currentTeacher ? currentTeacher.id : "",
+        grade: item.grade || "",
+        day: item.day || "",
+        period: item.period || 1,
+        span: item.span || 1,
+        term: item.term || ""
+      };
+
+      const jsonStr = JSON.stringify(qrPayload);
+
+      document.getElementById('qrModalSubject').textContent = `${item.subjectCode} ${item.subjectName}`;
+      document.getElementById('qrModalTeacher').textContent = `ผู้สอน: ${item.teacher} | ชั้น ${item.grade} คาบที่ ${item.period}`;
+      
+      document.getElementById('qrDetailList').innerHTML = `
+        • <b>วิชา:</b> ${item.subjectCode} ${item.subjectName}<br>
+        • <b>ผู้สอน:</b> ${item.teacher}<br>
+        • <b>คาบเรียน:</b> คาบที่ ${item.period} (${item.span} คาบ) | ชั้น ${item.grade} (วัน${item.day})
+      `;
+
+      const container = document.getElementById('qrcodeContainer');
+      container.innerHTML = '';
+
+      // 1. ตรวจสอบว่ามี qrcode-generator หรือไม่
+      if (typeof qrcode !== 'undefined') {
+        try {
+          const qr = qrcode(0, 'M');
+          qr.addData(jsonStr);
+          qr.make();
+          // สร้าง SVG คมชัด 100%
+          container.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
+          lastQrImageData = qr.createDataURL(6, 2);
+        } catch (err) {
+          console.warn("ใช้ระบบรูปภาพสำรอง:", err);
+          renderQrFallback(container, jsonStr);
+        }
+      } else {
+        // 2. ถ้าเน็ตบล็อก CDN ให้ใช้ระบบรูปภาพ Fallback ทันที
+        renderQrFallback(container, jsonStr);
+      }
+
+      document.getElementById('qrGeneratorModal').classList.remove('hidden');
+    }
+
+    /**
+     * ระบบ Fallback สร้าง QR Code หาก CDN โดนบล็อก
+     */
+    function renderQrFallback(container, text) {
+      const encoded = encodeURIComponent(text);
+      const url = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encoded}`;
+      container.innerHTML = `<img src="${url}" alt="QR Code" class="w-52 h-52 rounded-xl shadow-sm mx-auto" />`;
+      lastQrImageData = url;
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrGeneratorModal').classList.add('hidden');
+    }
+
+    /**
+     * ดาวน์โหลดรูป QR Code
+     */
+    function downloadQrImage() {
+      if (!lastQrImageData) return;
+      const link = document.createElement('a');
+      link.download = `QR_${document.getElementById('qrModalSubject').textContent}.png`;
+      link.href = lastQrImageData;
+      link.target = "_blank";
+      link.click();
+    }
+
+    /**
+     * กล้องสแกน QR Code
+     */
+    function openScannerModal() {
+      document.getElementById('scannerModal').classList.remove('hidden');
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => handleScanSuccess(decodedText),
+        () => {}
+      ).catch(err => {
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่สามารถเปิดกล้องได้',
+          text: 'กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์',
+          confirmButtonColor: '#10b981'
+        });
+        closeScannerModal();
+      });
+    }
+
+    function closeScannerModal() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('scannerModal').classList.add('hidden');
+        }).catch(() => {
+          document.getElementById('scannerModal').classList.add('hidden');
+        });
+      } else {
+        document.getElementById('scannerModal').classList.add('hidden');
+      }
+    }
+
+    /**
+     * เมื่อสแกน QR Code สำเร็จ: นำข้อมูล AUTOFILL จาก QR มากรอกลงฟอร์มทันที
+     */
+    function handleScanSuccess(decodedText) {
+      closeScannerModal();
+      try {
+        const data = JSON.parse(decodedText);
+        
+        const sCode = data.code || data.subjectCode || data.c || '';
+        const sName = data.name || data.subjectName || data.n || '';
+        const sTeacher = data.teacher || data.t || '';
+        const sGrade = data.grade || data.g || '';
+        const sDay = data.day || data.d || '';
+        const sPeriod = data.period || data.p || '';
+        const sTeacherId = data.teacherId || '';
+
+        // กรอกข้อมูลอัตโนมัติ
+        document.getElementById('formSubjectCode').value = sCode;
+        document.getElementById('formSubjectName').value = sName;
+        document.getElementById('formGrade').value = sGrade;
+        document.getElementById('formDay').value = sDay;
+        document.getElementById('formPeriod').value = sPeriod;
+
+        document.getElementById('formSubjectDisplay').value = `${sCode} ${sName}`;
+        document.getElementById('formGradeDayDisplay').value = `${sGrade} (วัน${sDay})`;
+        document.getElementById('modalSubjectSub').textContent = `${sCode} - ${sName}`;
+
+        if (currentTeacher) {
+          document.getElementById('formTeacherId').value = currentTeacher.id || sTeacherId;
+          document.getElementById('formTeacherName').value = currentTeacher.name || sTeacher;
+        } else {
+          document.getElementById('formTeacherId').value = sTeacherId || '-';
+          document.getElementById('formTeacherName').value = sTeacher || '-';
+        }
+
+        document.getElementById('formTopic').value = "";
+        document.getElementById('formNote').value = "";
+        document.getElementById('formTotal').value = 25;
+        document.getElementById('formPresent').value = 25;
+        document.getElementById('formAbsent').value = 0;
+
+        document.getElementById('teachingLogModal').classList.remove('hidden');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'สแกนสำเร็จ!',
+          text: `กรอกข้อมูลวิชา ${sName} คาบที่ ${sPeriod} ให้เรียบร้อยแล้ว`,
+          timer: 1600,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+
+        setTimeout(() => {
+          document.getElementById('formTopic').focus();
+        }, 350);
+
+      } catch (err) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ข้อมูล QR Code ไม่ถูกต้อง',
+          text: decodedText,
+          confirmButtonColor: '#10b981'
+        });
+      }
+    }
+
+    function openDirectTeachingForm(index) {
+      const item = currentSchedules[index];
+      handleScanSuccess(JSON.stringify({
+        code: item.subjectCode,
+        name: item.subjectName,
+        teacher: item.teacher,
+        grade: item.grade,
+        day: item.day,
+        period: item.period
+      }));
+    }
+
+    function closeTeachingModal() {
+      document.getElementById('teachingLogModal').classList.add('hidden');
+    }
+
+    function calculateAttendance() {
+      const total = parseInt(document.getElementById('formTotal').value) || 0;
+      const present = parseInt(document.getElementById('formPresent').value) || 0;
+      let absent = total - present;
+      if (absent < 0) absent = 0;
+      document.getElementById('formAbsent').value = absent;
+    }
+
+    async function submitTeachingLog(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmitTeaching');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
+
+      const payload = {
+        action: "saveTeachingLog",
+        teacherId: document.getElementById('formTeacherId').value,
+        teacherName: document.getElementById('formTeacherName').value,
+        grade: document.getElementById('formGrade').value,
+        day: document.getElementById('formDay').value,
+        period: document.getElementById('formPeriod').value,
+        subjectCode: document.getElementById('formSubjectCode').value,
+        subjectName: document.getElementById('formSubjectName').value,
+        topic: document.getElementById('formTopic').value,
+        totalStudents: document.getElementById('formTotal').value,
+        presentCount: document.getElementById('formPresent').value,
+        absentCount: document.getElementById('formAbsent').value,
+        note: document.getElementById('formNote').value
+      };
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        Swal.fire({
+          icon: 'success',
+          title: 'บันทึกสำเร็จ!',
+          text: 'ข้อมูลการสอนถูกบันทึกลงใน Google Sheets เรียบร้อยแล้ว',
+          confirmButtonColor: '#10b981'
+        });
+        closeTeachingModal();
+        document.getElementById('teachingForm').reset();
+      } catch (err) {
+        Swal.fire({
+          icon: 'success',
+          title: 'บันทึกสำเร็จ',
+          text: 'ส่งข้อมูลเรียบร้อยแล้ว',
+          confirmButtonColor: '#10b981'
+        });
+        closeTeachingModal();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลการสอน`;
+      }
+    }
+
+    function openSubstituteModal() {
+      if (currentTeacher) {
+        document.getElementById('subOriginalTeacher').value = currentTeacher.name;
+      }
+      document.getElementById('substituteModal').classList.remove('hidden');
+    }
+
+    function closeSubstituteModal() {
+      document.getElementById('substituteModal').classList.add('hidden');
+    }
+
+    async function submitSubstitute(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmitSub');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
+
+      const payload = {
+        action: "saveSubstitute",
+        date: document.getElementById('subDate').value,
+        term: document.getElementById('subTerm').value,
+        absentTeacher: document.getElementById('subOriginalTeacher').value,
+        subTeacher: document.getElementById('subNewTeacher').value,
+        grade: document.getElementById('subGrade').value,
+        period: document.getElementById('subPeriod').value,
+        span: document.getElementById('subSpan').value,
+        subjectCode: document.getElementById('subSubjectCode').value,
+        reason: document.getElementById('subReason').value,
+        email: currentTeacher ? currentTeacher.id : "-"
+      };
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        Swal.fire({
+          icon: 'success',
+          title: 'แจ้งสอนแทนสำเร็จ',
+          text: 'บันทึกข้อมูลเรียบร้อยแล้ว',
+          confirmButtonColor: '#f59e0b'
+        });
+        closeSubstituteModal();
+      } catch (err) {
+        Swal.fire({
+          icon: 'success',
+          title: 'แจ้งสอนแทนสำเร็จ',
+          text: 'ส่งข้อมูลเรียบร้อย',
+          confirmButtonColor: '#f59e0b'
+        });
+        closeSubstituteModal();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> บันทึกข้อมูลสอนแทน`;
+      }
+    }
+
+    async function openDashboardModal() {
+      document.getElementById('dashboardModal').classList.remove('hidden');
+      const tableBody = document.getElementById('historyTableBody');
+      tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติการสอน...</td></tr>`;
+
+      try {
+        let historyUrl = `${SCRIPT_URL}?action=getHistory`;
+        if (currentTeacher) {
+          historyUrl += `&teacher=${encodeURIComponent(currentTeacher.name)}`;
+        }
+
+        const res = await fetch(historyUrl);
+        const data = await res.json();
+
+        if (data.status === "success" && data.history && data.history.length > 0) {
+          const list = data.history;
+          document.getElementById('statTotalLogs').textContent = list.length;
+          document.getElementById('statNormalLogs').textContent = list.length;
+          document.getElementById('statSubLogs').textContent = 0;
+
+          tableBody.innerHTML = list.map(item => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-2.5 font-mono text-[11px] text-slate-500">${item.timestamp}</td>
+              <td class="p-2.5 font-medium text-slate-800">${item.subjectName}<br><span class="text-[10px] text-slate-400 font-mono">${item.grade} คาบ ${item.period}</span></td>
+              <td class="p-2.5 text-slate-700">${item.teacherName}</td>
+              <td class="p-2.5 text-slate-600">${item.topic}</td>
+              <td class="p-2.5 text-center font-bold text-emerald-700 font-mono">${item.presentCount}/${item.totalStudents}</td>
+            </tr>
+          `).join('');
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">ยังไม่มีประวัติการบันทึก</td></tr>`;
+        }
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">ไม่สามารถเชื่อมต่อฐานข้อมูลได้</td></tr>`;
+      }
+    }
+
+    function closeDashboardModal() {
+      document.getElementById('dashboardModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
