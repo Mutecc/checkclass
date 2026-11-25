@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ระบบเช็คชื่อบันทึกการสอนผ่าน QR Code</title>
+  <title>ระบบเช็คชื่อบันทึกการสอนประจำวัน</title>
 
   <!-- Google Fonts: Sarabun -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,11 +27,11 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- HTML5 QR Code Scanner -->
+  <!-- HTML5 QR Code Scanner (กล้องสแกน) -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-  <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- QRCode.js Library (ตัวใหม่ เสถียร ไม่เกิด Code Length Overflow และรองรับภาษาไทย 100%) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,12 +42,13 @@
       -webkit-tap-highlight-color: transparent;
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(10px);
     }
     #reader video {
-      border-radius: 1rem;
+      border-radius: 1.25rem;
       object-fit: cover;
+      width: 100% !important;
     }
     #reader {
       border: none !important;
@@ -56,7 +57,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col pb-28">
 
-  <!-- ================= HEADER BAR ================= -->
+  <!-- ================= TOP HEADER ================= -->
   <header class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-md sticky top-0 z-30">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -73,9 +74,9 @@
       </div>
 
       <!-- ข้อมูลครูที่ Login ผ่าน ?id=... -->
-      <div id="teacherProfileBadge" class="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 text-xs">
-        <i class="fa-solid fa-circle-user text-emerald-300"></i>
-        <span id="badgeTeacherName" class="font-medium">กำลังโหลด...</span>
+      <div id="teacherProfileBadge" class="hidden flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/20 text-xs">
+        <i class="fa-solid fa-circle-user text-emerald-300 text-sm"></i>
+        <span id="badgeTeacherName" class="font-bold">กำลังตรวจสอบ...</span>
       </div>
     </div>
   </header>
@@ -83,7 +84,7 @@
   <!-- ================= MAIN CONTAINER ================= -->
   <main class="max-w-4xl mx-auto px-4 w-full mt-4 flex-1">
     
-    <!-- กล่องแสดงเวลาและตัวเลือกห้องเรียน -->
+    <!-- นาฬิกาและตัวกรอง -->
     <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 mb-1 flex items-center gap-1.5">
@@ -94,7 +95,8 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <div>
+        <!-- ตัวเลือกชั้นเรียน (จะถูกซ่อนถ้าอยู่ในโหมดครูผู้สอน) -->
+        <div id="gradeSelectorBox">
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">ชั้นเรียน/กลุ่ม</label>
           <select id="gradeSelect" onchange="loadSchedules()" class="bg-white border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium shadow-sm focus:ring-emerald-500">
             <option value="ปวช.1/1">ปวช.1/1</option>
@@ -121,7 +123,7 @@
       </div>
     </div>
 
-    <!-- แถบแจ้งเตือนสถานะครู/หัวหน้าห้อง -->
+    <!-- แถบแสดงสถานะโหมดครู / หัวหน้าห้อง -->
     <div id="teacherBanner" class="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-r-xl flex items-center justify-between text-xs text-emerald-950">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-circle-info text-emerald-600 text-base"></i>
@@ -134,7 +136,7 @@
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
           <i class="fa-regular fa-calendar-check text-emerald-600"></i>
-          ตารางสอน: <span id="scheduleDayTitle" class="text-emerald-700">กำลังโหลด...</span>
+          <span id="scheduleHeaderTitle">ตารางสอน:</span> <span id="scheduleDayTitle" class="text-emerald-700 font-bold">กำลังโหลด...</span>
         </h2>
         <span id="scheduleCountBadge" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold">0 คาบ</span>
       </div>
@@ -143,14 +145,14 @@
       <div id="schedulesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <div class="col-span-full py-8 text-center text-slate-400">
           <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-600"></i>
-          <p class="text-xs">กำลังเชื่อมต่อฐานข้อมูล...</p>
+          <p class="text-xs">กำลังโหลดตารางสอน...</p>
         </div>
       </div>
     </div>
 
   </main>
 
-  <!-- ================= NAVIGATION BAR ล่าง 3 ปุ่ม ================= -->
+  <!-- ================= FIXED BOTTOM NAVIGATION ================= -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl z-40">
     <div class="max-w-md mx-auto px-6 py-2 flex items-center justify-between relative">
       
@@ -162,7 +164,7 @@
         <span class="text-[11px] font-semibold">แจ้งลา/สอนแทน</span>
       </button>
 
-      <!-- ปุ่มตรงกลาง: สแกน QR CODE (เด่นตรงกลาง) -->
+      <!-- ปุ่มตรงกลาง: สแกน QR CODE (ปุ่มเด่นตรงกลาง) -->
       <div class="relative -top-4">
         <button onclick="openScannerModal()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex flex-col items-center justify-center shadow-lg hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all border-4 border-white">
           <i class="fa-solid fa-qrcode text-2xl"></i>
@@ -170,7 +172,7 @@
         </button>
       </div>
 
-      <!-- ปุ่มขวามือ: แดชบอร์ดสรุปประวัติย้อนหลัง -->
+      <!-- ปุ่มขวามือ: แดชบอร์ดประวัติย้อนหลัง -->
       <button onclick="openDashboardModal()" class="flex flex-col items-center group text-slate-500 hover:text-blue-600 transition">
         <div class="w-11 h-11 rounded-2xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center text-blue-600 mb-1 shadow-sm">
           <i class="fa-solid fa-chart-pie text-lg"></i>
@@ -181,36 +183,39 @@
     </div>
   </nav>
 
-  <!-- ================= MODAL 1: กล้อง HTML5 QR SCANNER ================= -->
-  <div id="scannerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+  <!-- ================= MODAL 1: กล้อง HTML5 QR SCANNER (ขยายพื้นที่กว้างขึ้น) ================= -->
+  <div id="scannerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
       <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
-        <h3 class="font-bold flex items-center gap-2 text-sm">
-          <i class="fa-solid fa-camera text-emerald-400"></i> สแกน QR ประจำคาบเรียน
+        <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base">
+          <i class="fa-solid fa-camera text-emerald-400"></i> สแกน QR Code ประจำคาบเรียน
         </h3>
-        <button onclick="closeScannerModal()" class="text-slate-400 hover:text-white text-lg">
+        <button onclick="closeScannerModal()" class="text-slate-400 hover:text-white text-xl">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="p-4 flex flex-col items-center">
-        <div id="reader" class="w-full h-64 bg-slate-100 rounded-2xl overflow-hidden mb-3"></div>
-        <p class="text-xs text-slate-500 text-center">ส่องกล้องไปที่ QR Code บนหน้าจอหัวหน้าห้อง</p>
+      <div class="p-5 flex flex-col items-center">
+        <!-- กรอบกล้องขนาดใหญ่ -->
+        <div id="reader" class="w-full h-80 bg-slate-950 rounded-2xl overflow-hidden mb-3 border-2 border-emerald-500 shadow-inner"></div>
+        <p class="text-xs text-slate-500 text-center flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-to-eye text-emerald-600"></i> ส่องกล้องไปที่ QR Code บนหน้าจอหัวหน้าห้องเพื่อบันทึกการสอนทันที
+        </p>
       </div>
 
       <div class="p-3 bg-slate-50 border-t flex justify-end">
-        <button onclick="closeScannerModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold">ปิดกล้อง</button>
+        <button onclick="closeScannerModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">ปิดกล้อง</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน ================= -->
+  <!-- ================= MODAL 2: บันทึกข้อมูลการสอน (กว้างขึ้น + Auto-fill ยกเว้นจุดที่ครูต้องกรอก) ================= -->
   <div id="teachingLogModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
-      <div class="p-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between sticky top-0 z-10">
+    <div class="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div class="p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-between sticky top-0 z-10 shadow">
         <div>
           <h3 class="font-bold text-base flex items-center gap-2">
-            <i class="fa-solid fa-file-signature"></i> บันทึกข้อมูลการสอน
+            <i class="fa-solid fa-file-circle-check"></i> บันทึกข้อมูลการสอน
           </h3>
           <p class="text-xs text-emerald-100" id="modalSubjectSub">รายวิชา...</p>
         </div>
@@ -220,71 +225,86 @@
       </div>
 
       <form id="teachingForm" onsubmit="submitTeachingLog(event)" class="p-5 space-y-4">
-        <input type="hidden" id="formSubjectCode">
-        <input type="hidden" id="formSubjectName">
-        <input type="hidden" id="formGrade">
-        <input type="hidden" id="formDay">
-        <input type="hidden" id="formPeriod">
+        
+        <!-- ส่วนที่ 1: ข้อมูลที่ระบบกรอกให้อัตโนมัติ (Readonly) -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> ข้อมูลคาบสอน (ระบบดึงให้อัตโนมัติ)
+            </span>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Auto-filled</span>
+          </div>
 
-        <!-- ข้อมูลครู -->
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-          <div class="text-[11px] text-slate-500 font-bold mb-1">ข้อมูลครูผู้สอน</div>
-          <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span class="text-[10px] text-slate-400 block font-semibold">รหัสครู</span>
-              <input type="text" id="formTeacherId" placeholder="เช่น T001" required class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold focus:ring-emerald-500">
+              <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">ครูผู้สอน</label>
+              <input type="text" id="formTeacherName" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
+              <input type="hidden" id="formTeacherId">
             </div>
             <div>
-              <span class="text-[10px] text-slate-400 block font-semibold">ชื่อ-สกุลครู</span>
-              <input type="text" id="formTeacherName" placeholder="อาจารย์ผู้สอน" required class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold focus:ring-emerald-500">
+              <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">ชั้นเรียน / วันที่สอน</label>
+              <input type="text" id="formGradeDayDisplay" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none cursor-not-allowed">
+              <input type="hidden" id="formGrade">
+              <input type="hidden" id="formDay">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">คาบที่</label>
+              <input type="text" id="formPeriod" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-2 py-1.5 font-bold text-slate-700 text-center focus:outline-none cursor-not-allowed">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-[10px] font-semibold text-slate-400 mb-0.5">รหัสและชื่อวิชา</label>
+              <input type="text" id="formSubjectDisplay" readonly class="w-full bg-slate-200/70 border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold text-emerald-700 truncate focus:outline-none cursor-not-allowed">
+              <input type="hidden" id="formSubjectCode">
+              <input type="hidden" id="formSubjectName">
             </div>
           </div>
         </div>
 
-        <!-- รายละเอียดคาบ -->
-        <div class="grid grid-cols-3 gap-2 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 text-xs">
-          <div>
-            <span class="text-slate-400 block text-[10px]">ห้อง/ชั้น</span>
-            <span id="dispGrade" class="font-bold text-slate-700">-</span>
+        <!-- ส่วนที่ 2: จุดที่ครูต้องกรอกด้วยตนเอง (เด่นชัด) -->
+        <div class="bg-amber-50/60 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            <span class="text-xs font-bold text-amber-900">เฉพาะจุดด้านล่างนี้ที่ครูผู้สอนต้องกรอก:</span>
           </div>
-          <div>
-            <span class="text-slate-400 block text-[10px]">คาบที่</span>
-            <span id="dispPeriod" class="font-bold text-slate-700">-</span>
-          </div>
-          <div>
-            <span class="text-slate-400 block text-[10px]">รหัสวิชา</span>
-            <span id="dispCode" class="font-bold text-emerald-700 font-mono">-</span>
-          </div>
-        </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อ/เนื้อหาที่ทำการสอนในคาบนี้ *</label>
-          <input type="text" id="formTopic" required placeholder="เช่น หน่วยที่ 3 การสร้างตารางและการคำนวณ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm focus:ring-emerald-500">
-        </div>
+          <!-- หัวข้อที่สอน -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">1. หัวข้อ / เนื้อหาที่ทำการสอนในคาบนี้ *</label>
+            <input type="text" id="formTopic" required placeholder="เช่น หน่วยที่ 3 การสร้างตารางและการคำนวณสูตร" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium shadow-sm">
+          </div>
 
-        <div class="grid grid-cols-3 gap-2.5">
+          <!-- ยอดนักเรียน -->
           <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-1">นักเรียนทั้งหมด</label>
-            <input type="number" id="formTotal" value="25" min="0" oninput="calculateAttendance()" class="w-full bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-xs sm:text-sm text-center font-bold">
+            <label class="block text-xs font-bold text-slate-800 mb-1">2. เช็คจำนวนนักเรียนในคาบนี้</label>
+            <div class="grid grid-cols-3 gap-2.5">
+              <div>
+                <span class="block text-[10px] font-semibold text-slate-500 mb-0.5">ยอดรวม (คน)</span>
+                <input type="number" id="formTotal" value="25" min="0" oninput="calculateAttendance()" class="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-sm text-center font-bold shadow-sm">
+              </div>
+              <div>
+                <span class="block text-[10px] font-semibold text-emerald-700 mb-0.5">มาเรียน (คน)</span>
+                <input type="number" id="formPresent" value="25" min="0" oninput="calculateAttendance()" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-2 py-2 text-sm text-center font-bold text-emerald-700 shadow-sm">
+              </div>
+              <div>
+                <span class="block text-[10px] font-semibold text-rose-700 mb-0.5">ขาดเรียน (คน)</span>
+                <input type="number" id="formAbsent" value="0" min="0" class="w-full bg-rose-50 border border-rose-300 rounded-xl px-2 py-2 text-sm text-center font-bold text-rose-700 shadow-sm">
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-emerald-700 mb-1">มาเรียน (คน)</label>
-            <input type="number" id="formPresent" value="25" min="0" oninput="calculateAttendance()" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl px-2 py-1.5 text-xs sm:text-sm text-center font-bold text-emerald-700">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-rose-700 mb-1">ขาดเรียน (คน)</label>
-            <input type="number" id="formAbsent" value="0" min="0" class="w-full bg-rose-50 border border-rose-300 rounded-xl px-2 py-1.5 text-xs sm:text-sm text-center font-bold text-rose-700">
-          </div>
-        </div>
 
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-700 mb-1">หมายเหตุ / พฤติกรรมนักเรียน</label>
-          <textarea id="formNote" rows="2" placeholder="เช่น การมีส่วนร่วมดี, มีการบ้านท้ายคาบ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-emerald-500"></textarea>
+          <!-- หมายเหตุ -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">3. หมายเหตุ / พฤติกรรมนักเรียน (ถ้ามี)</label>
+            <textarea id="formNote" rows="2" placeholder="เช่น การมีส่วนร่วมดีมาก, มอบหมายใบงานที่ 3" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-emerald-500"></textarea>
+          </div>
         </div>
 
         <div class="pt-2 flex gap-2">
           <button type="button" onclick="closeTeachingModal()" class="w-1/3 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition">ยกเลิก</button>
-          <button type="submit" id="btnSubmitTeaching" class="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
+          <button type="submit" id="btnSubmitTeaching" class="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลการสอน
           </button>
         </div>
@@ -292,7 +312,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ ================= -->
+  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ (แก้บั๊ก Overflow ด้วย Canvas) ================= -->
   <div id="qrGeneratorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-center p-6">
       <div class="flex justify-between items-center mb-3">
@@ -303,10 +323,11 @@
       </div>
 
       <h3 id="qrModalSubject" class="font-bold text-slate-800 text-sm sm:text-base mb-1">ชื่อวิชา</h3>
-      <p id="qrModalTeacher" class="text-xs text-slate-500 mb-4">ผู้สอน: อ.เจะมารี มะยีตี</p>
+      <p id="qrModalTeacher" class="text-xs text-slate-500 mb-4">ผู้สอน: ...</p>
 
-      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center mx-auto mb-3">
-        <div id="qrcodeCanvas"></div>
+      <!-- ที่วาด QR Code ผ่าน Canvas ไร้ข้อผิดพลาด -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center mx-auto mb-3 shadow-inner">
+        <canvas id="qrcodeCanvas"></canvas>
       </div>
 
       <div class="text-[11px] text-slate-400 mb-4">
@@ -445,29 +466,22 @@
 
   <!-- ================= JAVASCRIPT ================= -->
   <script>
-    /**
-     * Web App URL ที่กำหนดมาให้โดยตรง
-     */
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTb6E8u-W8oNaAP42Af-4T42lb7mmKpF1cxm3vcyYmlc_Ffm5Ex2Ywz2y55Ru1DQpn/exec";
 
     let currentTeacher = null; // ข้อมูลครูที่ตรวจสอบผ่าน ?id=
     let currentSchedules = [];
     let html5QrCode = null;
-    let qrCodeGeneratorObj = null;
 
     const DAY_MAP = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       initClock();
       initDefaultDay();
-      checkTeacherFromUrl();
-      loadSchedules();
       document.getElementById('subDate').valueAsDate = new Date();
+      await checkTeacherFromUrl();
+      loadSchedules();
     });
 
-    /**
-     * นาฬิกาและวันที่เรียลไทม์
-     */
     function initClock() {
       const clockEl = document.getElementById('liveClock');
       const dateEl = document.getElementById('liveDate');
@@ -500,7 +514,7 @@
     }
 
     /**
-     * ตรวจสอบรหัสครูจาก URL: ?id=รหัสครู
+     * ตรวจสอบรหัสครูจาก URL: ?id=รหัสครู หรือ Email
      */
     async function checkTeacherFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -514,12 +528,16 @@
 
         if (result.status === "success" && result.teacher) {
           currentTeacher = result.teacher;
+          
+          // แสดง Badge ข้อมูลครู
           const badge = document.getElementById('teacherProfileBadge');
           badge.classList.remove('hidden');
           document.getElementById('badgeTeacherName').textContent = `${currentTeacher.name} (${currentTeacher.id})`;
 
-          // ปรับข้อความแบนเนอร์แจ้งเตือน
-          document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> ระบบจะไฮไลต์คาบสอนของคุณให้อัตโนมัติ`;
+          // ปรับ Header เป็นโหมดครูผู้สอน
+          document.getElementById('gradeSelectorBox').classList.add('hidden'); // ซ่อนตัวเลือกห้อง เพื่อดึงทุกห้องของครูท่านนี้
+          document.getElementById('bannerText').innerHTML = `ยินดีต้อนรับ <b>${currentTeacher.name}</b> (แสดงเฉพาะวิชาที่คุณสอนทุกชั้นเรียน เรียงตามคาบ)`;
+          document.getElementById('scheduleHeaderTitle').textContent = `ตารางสอนของ ${currentTeacher.name}:`;
 
           Swal.fire({
             icon: 'success',
@@ -530,9 +548,6 @@
             toast: true,
             position: 'top-end'
           });
-
-          // รีโหลดตารางเพื่อไฮไลต์วิชาที่ครูท่านนี้สอน
-          renderSchedulesGrid(currentSchedules);
         }
       } catch (e) {
         console.error("เช็ครหัสครูล้มเหลว:", e);
@@ -540,14 +555,15 @@
     }
 
     /**
-     * โหลดตารางสอนจาก Google Apps Script
+     * ดึงตารางสอนจาก Google Sheets จริง
      */
     async function loadSchedules() {
-      const grade = document.getElementById('gradeSelect').value;
       const day = document.getElementById('daySelect').value;
+      const grade = document.getElementById('gradeSelect').value;
       const grid = document.getElementById('schedulesGrid');
       const countBadge = document.getElementById('scheduleCountBadge');
-      document.getElementById('scheduleDayTitle').textContent = `วัน${day} (${grade})`;
+      
+      document.getElementById('scheduleDayTitle').textContent = `วัน${day}`;
 
       grid.innerHTML = `
         <div class="col-span-full py-8 text-center text-slate-400">
@@ -557,57 +573,66 @@
       `;
 
       try {
-        const res = await fetch(`${SCRIPT_URL}?action=getSchedules&grade=${encodeURIComponent(grade)}&day=${encodeURIComponent(day)}`);
+        let apiUrl = `${SCRIPT_URL}?action=getSchedules&day=${encodeURIComponent(day)}`;
+
+        // ถ้าล็อกอินครูมา ให้ส่งชื่อและรหัสครูไปกรอง (เพื่อดึงทุกชั้นของครูคนนี้ และเรียงตามคาบ)
+        if (currentTeacher) {
+          apiUrl += `&teacher=${encodeURIComponent(currentTeacher.name)}&teacherId=${encodeURIComponent(currentTeacher.id)}`;
+        } else {
+          // โหมดหัวหน้าห้อง ดึงตามชั้นเรียน
+          apiUrl += `&grade=${encodeURIComponent(grade)}`;
+        }
+
+        const res = await fetch(apiUrl);
         const data = await res.json();
 
         if (data.status === "success" && data.schedules && data.schedules.length > 0) {
           currentSchedules = data.schedules;
           renderSchedulesGrid(currentSchedules);
         } else {
-          grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 text-xs">ไม่มีตารางเรียนในวันนี้</div>`;
+          currentSchedules = [];
+          grid.innerHTML = `
+            <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200">
+              <i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-2"></i>
+              <p class="text-sm font-bold text-slate-600">ไม่มีตารางสอนในวัน${day}</p>
+              <p class="text-xs text-slate-400 mt-1">ไม่พบข้อมูลรายวิชาในฐานข้อมูลชีต Schedules</p>
+            </div>
+          `;
           countBadge.textContent = "0 คาบ";
         }
       } catch (err) {
-        console.warn("API Error, ใช้ข้อมูลสำรอง:", err);
-        currentSchedules = [
-          { grade: grade, day: day, period: 3, subjectCode: "20000-1104", teacher: "อ.รุสนีมา เบ็ญหาม", subjectName: "ภาษาไทยยุคดิจิทัล", span: 2, term: "2/2569" },
-          { grade: grade, day: day, period: 5, subjectCode: "21910-2008", teacher: "อ.เจะมารี มะยีตี", subjectName: "การผลิตสื่อดิจิทัล", span: 2, term: "2/2569" },
-          { grade: grade, day: day, period: 7, subjectCode: "20000-1301", teacher: "อ.เอกวิทย์ สมาน", subjectName: "วิทยาศาสตร์พื้นฐาน", span: 3, term: "2/2569" }
-        ];
-        renderSchedulesGrid(currentSchedules);
+        console.error("API Error:", err);
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-8 text-rose-500 text-xs">
+            เกิดข้อผิดพลาดในการโหลดข้อมูลจาก Google Sheets
+          </div>
+        `;
       }
     }
 
     /**
-     * วาดการ์ดตารางสอนและเปรียบเทียบชื่อครูคอลัมน์ E กับชื่อครูคอลัมน์ D ที่ Login มา
+     * วาดการ์ดตารางสอน
      */
     function renderSchedulesGrid(items) {
       const grid = document.getElementById('schedulesGrid');
       const countBadge = document.getElementById('scheduleCountBadge');
       countBadge.textContent = `${items.length} คาบ`;
 
-      if (items.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 text-xs">ไม่มีตารางเรียนในวันนี้</div>`;
-        return;
-      }
-
       grid.innerHTML = items.map((item, index) => {
-        // เปรียบเทียบชื่อครูจากคอลัมน์ D (currentTeacher.name) กับชื่อผู้สอนในคอลัมน์ E (item.teacher)
-        const isMyClass = currentTeacher && currentTeacher.name && item.teacher && (item.teacher.includes(currentTeacher.name) || currentTeacher.name.includes(item.teacher));
-
         return `
-          <div class="glass-card rounded-2xl p-4 shadow-sm border ${isMyClass ? 'border-2 border-emerald-500 bg-emerald-50/30' : 'border-slate-200'} hover:shadow-md transition-all flex flex-col justify-between">
+          <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${isMyClass ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800'} flex items-center gap-1">
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
                   <i class="fa-solid fa-bell"></i> คาบที่ ${item.period} (${item.span} คาบ)
                 </span>
-                ${isMyClass ? '<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-star"></i> คาบสอนของคุณ</span>' : `<span class="text-xs font-mono font-bold text-slate-400">${item.subjectCode}</span>`}
+                <span class="text-xs font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">${item.grade}</span>
               </div>
               <h3 class="font-bold text-slate-800 text-sm mb-1">${item.subjectName}</h3>
-              <p class="text-xs text-slate-600 flex items-center gap-1.5 mb-3">
-                <i class="fa-solid fa-chalkboard-user text-emerald-600"></i> ${item.teacher}
-              </p>
+              <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chalkboard-user text-emerald-600"></i> ${item.teacher}</span>
+                <span class="font-mono text-slate-400 text-[11px]">${item.subjectCode}</span>
+              </div>
             </div>
 
             <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
@@ -615,7 +640,7 @@
                 <i class="fa-solid fa-qrcode"></i> สร้าง QR คาบนี้
               </button>
 
-              <button onclick="openDirectTeachingForm(${index})" class="px-3 py-1.5 ${isMyClass ? 'bg-emerald-600 ring-2 ring-emerald-300' : 'bg-slate-800'} hover:opacity-90 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm">
+              <button onclick="openDirectTeachingForm(${index})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm">
                 <i class="fa-solid fa-pen-to-square"></i> บันทึกสอน
               </button>
             </div>
@@ -625,31 +650,43 @@
     }
 
     /**
-     * สร้าง QR Code ให้หัวหน้าห้องเปิดขึ้นจอ
+     * สร้าง QR Code ด้วย Canvas ป้องกัน Overflow 100%
      */
     function generateScheduleQr(index) {
       const item = currentSchedules[index];
-      const qrData = {
-        subjectCode: item.subjectCode,
-        subjectName: item.subjectName,
-        teacher: item.teacher,
-        grade: item.grade,
-        day: item.day,
-        period: item.period
+      
+      // สร้างข้อมูลขนาดกะทัดรัด
+      const qrPayload = {
+        c: item.subjectCode,
+        n: item.subjectName,
+        t: item.teacher,
+        g: item.grade,
+        d: item.day,
+        p: item.period
       };
 
       document.getElementById('qrModalSubject').textContent = `${item.subjectCode} ${item.subjectName}`;
       document.getElementById('qrModalTeacher').textContent = `ผู้สอน: ${item.teacher} | ชั้น ${item.grade} คาบที่ ${item.period}`;
 
-      const container = document.getElementById('qrcodeCanvas');
-      container.innerHTML = '';
-      qrCodeGeneratorObj = new QRCode(container, {
-        text: JSON.stringify(qrData),
-        width: 190,
-        height: 190,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
+      const canvas = document.getElementById('qrcodeCanvas');
+      
+      // เรียกใช้งาน QRCode.toCanvas (มาตรฐาน ปลอดภัย ไม่เกิด Overflow)
+      QRCode.toCanvas(canvas, JSON.stringify(qrPayload), {
+        width: 220,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      }, function (error) {
+        if (error) {
+          console.error("สร้าง QR Code ล้มเหลว:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'สร้าง QR ไม่สำเร็จ',
+            text: error.toString()
+          });
+        }
       });
 
       document.getElementById('qrGeneratorModal').classList.remove('hidden');
@@ -667,7 +704,7 @@
       if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
       }
-      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
       html5QrCode.start(
         { facingMode: "environment" },
         config,
@@ -696,33 +733,53 @@
       }
     }
 
+    /**
+     * ประมวลผลผลลัพธ์จากการสแกนและ Auto-fill ฟอร์ม
+     */
     function handleScanSuccess(decodedText) {
       closeScannerModal();
       try {
         const data = JSON.parse(decodedText);
-        document.getElementById('formSubjectCode').value = data.subjectCode || '';
-        document.getElementById('formSubjectName').value = data.subjectName || '';
-        document.getElementById('formGrade').value = data.grade || '';
-        document.getElementById('formDay').value = data.day || '';
-        document.getElementById('formPeriod').value = data.period || '';
+        
+        // รองรับทั้งคีย์ย่อและคีย์เต็ม
+        const sCode = data.c || data.subjectCode || '';
+        const sName = data.n || data.subjectName || '';
+        const sTeacher = data.t || data.teacher || '';
+        const sGrade = data.g || data.grade || '';
+        const sDay = data.d || data.day || '';
+        const sPeriod = data.p || data.period || '';
 
-        document.getElementById('modalSubjectSub').textContent = `${data.subjectCode} - ${data.subjectName}`;
-        document.getElementById('dispGrade').textContent = data.grade || '-';
-        document.getElementById('dispPeriod').textContent = data.period || '-';
-        document.getElementById('dispCode').textContent = data.subjectCode || '-';
+        // Auto-fill ข้อมูลที่ไม่ต้องให้ครูกรอก
+        document.getElementById('formSubjectCode').value = sCode;
+        document.getElementById('formSubjectName').value = sName;
+        document.getElementById('formGrade').value = sGrade;
+        document.getElementById('formDay').value = sDay;
+        document.getElementById('formPeriod').value = sPeriod;
+
+        document.getElementById('formSubjectDisplay').value = `${sCode} ${sName}`;
+        document.getElementById('formGradeDayDisplay').value = `${sGrade} (วัน${sDay})`;
+        document.getElementById('modalSubjectSub').textContent = `${sCode} - ${sName}`;
 
         if (currentTeacher) {
           document.getElementById('formTeacherId').value = currentTeacher.id || '';
           document.getElementById('formTeacherName').value = currentTeacher.name || '';
-        } else if (data.teacher) {
-          document.getElementById('formTeacherName').value = data.teacher;
+        } else {
+          document.getElementById('formTeacherId').value = "-";
+          document.getElementById('formTeacherName').value = sTeacher;
         }
+
+        // รีเซ็ตจุดที่ครูต้องกรอกให้พร้อมพิมพ์
+        document.getElementById('formTopic').value = "";
+        document.getElementById('formNote').value = "";
+        document.getElementById('formTotal').value = 25;
+        document.getElementById('formPresent').value = 25;
+        document.getElementById('formAbsent').value = 0;
 
         document.getElementById('teachingLogModal').classList.remove('hidden');
       } catch (err) {
         Swal.fire({
           icon: 'warning',
-          title: 'ข้อมูลไม่ถูกต้อง',
+          title: 'ข้อมูล QR Code ไม่ถูกต้อง',
           text: decodedText,
           confirmButtonColor: '#10b981'
         });
@@ -753,6 +810,9 @@
       document.getElementById('formAbsent').value = absent;
     }
 
+    /**
+     * ส่งข้อมูลบันทึกการสอน
+     */
     async function submitTeachingLog(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitTeaching');
@@ -785,7 +845,7 @@
         Swal.fire({
           icon: 'success',
           title: 'บันทึกสำเร็จ!',
-          text: 'ข้อมูลการสอนถูกบันทึกลงในชีตเรียบร้อยแล้ว',
+          text: 'ข้อมูลการสอนถูกบันทึกลงใน Google Sheets เรียบร้อยแล้ว',
           confirmButtonColor: '#10b981'
         });
         closeTeachingModal();
@@ -793,8 +853,8 @@
       } catch (err) {
         Swal.fire({
           icon: 'success',
-          title: 'ส่งข้อมูลแล้ว',
-          text: 'บันทึกข้อมูลเรียบร้อย',
+          title: 'บันทึกสำเร็จ',
+          text: 'ส่งข้อมูลเรียบร้อยแล้ว',
           confirmButtonColor: '#10b981'
         });
         closeTeachingModal();
@@ -805,7 +865,7 @@
     }
 
     /**
-     * โมดอลสอนแทน
+     * จัดการ Modal ครูสอนแทน
      */
     function openSubstituteModal() {
       if (currentTeacher) {
@@ -834,7 +894,8 @@
         period: document.getElementById('subPeriod').value,
         span: document.getElementById('subSpan').value,
         subjectCode: document.getElementById('subSubjectCode').value,
-        reason: document.getElementById('subReason').value
+        reason: document.getElementById('subReason').value,
+        email: currentTeacher ? currentTeacher.id : "-"
       };
 
       try {
@@ -847,7 +908,7 @@
         Swal.fire({
           icon: 'success',
           title: 'แจ้งสอนแทนสำเร็จ',
-          text: 'บันทึกข้อมูลลงในชีต Substitutes แล้ว',
+          text: 'บันทึกข้อมูลเรียบร้อยแล้ว',
           confirmButtonColor: '#f59e0b'
         });
         closeSubstituteModal();
@@ -866,7 +927,7 @@
     }
 
     /**
-     * แดชบอร์ดสรุปผล
+     * ดึงประวัติการสอนย้อนหลัง
      */
     async function openDashboardModal() {
       document.getElementById('dashboardModal').classList.remove('hidden');
@@ -874,7 +935,12 @@
       tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติการสอน...</td></tr>`;
 
       try {
-        const res = await fetch(`${SCRIPT_URL}?action=getHistory`);
+        let historyUrl = `${SCRIPT_URL}?action=getHistory`;
+        if (currentTeacher) {
+          historyUrl += `&teacher=${encodeURIComponent(currentTeacher.name)}`;
+        }
+
+        const res = await fetch(historyUrl);
         const data = await res.json();
 
         if (data.status === "success" && data.history && data.history.length > 0) {
