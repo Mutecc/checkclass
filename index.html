@@ -27,10 +27,10 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- HTML5 QR Code Scanner (สำหรับกล้อง) -->
+  <!-- HTML5 QR Code Scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-  <!-- QRCode-Generator (ตัวแท้สำหรับเบราว์เซอร์ ไม่เกิด ReferenceError แน่นอน) -->
+  <!-- QRCode-Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
   <!-- FontAwesome Icons -->
@@ -89,7 +89,7 @@
   <!-- ================= MAIN CONTAINER ================= -->
   <main class="max-w-4xl mx-auto px-4 w-full mt-4 flex-1">
     
-    <!-- นาฬิกาและตัวกรอง -->
+    <!-- นาฬิกาและตัวกรอง (ดึงตัวเลือกอัตโนมัติ) -->
     <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <div class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 mb-1 flex items-center gap-1.5">
@@ -100,24 +100,19 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <!-- ตัวเลือกชั้นเรียน ดึงจากชีตอัตโนมัติ -->
         <div id="gradeSelectorBox">
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">ชั้นเรียน/กลุ่ม</label>
           <select id="gradeSelect" onchange="loadSchedules()" class="bg-white border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium shadow-sm focus:ring-emerald-500">
-            <option value="ปวช.1/1">ปวช.1/1</option>
-            <option value="ปวช.2/1">ปวช.2/1</option>
-            <option value="ปวช.3/1">ปวช.3/1</option>
-            <option value="ปวส.1/1">ปวส.1/1</option>
+            <option value="">กำลังโหลดชั้นเรียน...</option>
           </select>
         </div>
 
+        <!-- ตัวเลือกวัน ดึงจากชีตอัตโนมัติ -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">วันในสัปดาห์</label>
           <select id="daySelect" onchange="loadSchedules()" class="bg-white border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium shadow-sm focus:ring-emerald-500">
-            <option value="จันทร์">วันจันทร์</option>
-            <option value="อังคาร">วันอังคาร</option>
-            <option value="พุธ">วันพุธ</option>
-            <option value="พฤหัสบดี">วันพฤหัสบดี</option>
-            <option value="ศุกร์">วันศุกร์</option>
+            <option value="">กำลังโหลดวัน...</option>
           </select>
         </div>
 
@@ -149,7 +144,7 @@
       <div id="schedulesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <div class="col-span-full py-8 text-center text-slate-400">
           <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-600"></i>
-          <p class="text-xs">กำลังโหลดตารางสอน...</p>
+          <p class="text-xs">กำลังโหลดข้อมูลจากชีต...</p>
         </div>
       </div>
     </div>
@@ -314,7 +309,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ (SVG คมชัดสูง ไร้บั๊ก) ================= -->
+  <!-- ================= MODAL 3: สร้าง QR CODE ประจำคาบ ================= -->
   <div id="qrGeneratorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col text-center p-6">
       <div class="flex justify-between items-center mb-3">
@@ -329,7 +324,6 @@
       <h3 id="qrModalSubject" class="font-bold text-slate-800 text-sm sm:text-base mb-1">ชื่อวิชา</h3>
       <p id="qrModalTeacher" class="text-xs text-slate-500 mb-3">ผู้สอน: ...</p>
 
-      <!-- กล่องแสดง QR Code (SVG Container) -->
       <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center mx-auto mb-3 shadow-inner min-h-[220px]">
         <div id="qrcodeContainer" class="flex items-center justify-center"></div>
       </div>
@@ -491,10 +485,10 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       initClock();
-      initDefaultDay();
       document.getElementById('subDate').valueAsDate = new Date();
       await checkTeacherFromUrl();
-      loadSchedules();
+      // ดึงตัวเลือกชั้นเรียนและวันจากฐานข้อมูล แล้วโหลดตารางสอน
+      await loadFilterOptionsFromSheet();
     });
 
     function initClock() {
@@ -515,16 +509,67 @@
       setInterval(update, 1000);
     }
 
-    function initDefaultDay() {
-      const dayIndex = new Date().getDay();
-      const currentDayName = DAY_MAP[dayIndex];
+    /**
+     * ดึงตัวเลือกชั้นเรียนและวันจากฐานข้อมูลในชีต Schedules อัตโนมัติ
+     */
+    async function loadFilterOptionsFromSheet() {
+      const gradeSelect = document.getElementById('gradeSelect');
       const daySelect = document.getElementById('daySelect');
-      
-      for (let i = 0; i < daySelect.options.length; i++) {
-        if (daySelect.options[i].value === currentDayName) {
-          daySelect.selectedIndex = i;
-          break;
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getFilterOptions`);
+        const data = await res.json();
+
+        if (data.status === "success") {
+          // 1. เติมตัวเลือกชั้นเรียน (Grades)
+          gradeSelect.innerHTML = "";
+          if (data.grades && data.grades.length > 0) {
+            data.grades.forEach(g => {
+              const opt = document.createElement('option');
+              opt.value = g;
+              opt.textContent = g;
+              gradeSelect.appendChild(opt);
+            });
+          } else {
+            gradeSelect.innerHTML = `<option value="">ไม่มีข้อมูลชั้นเรียน</option>`;
+          }
+
+          // 2. เติมตัวเลือกวัน (Days)
+          daySelect.innerHTML = "";
+          const todayThai = DAY_MAP[new Date().getDay()]; // ชื่อวันปัจจุบัน เช่น "พุธ"
+          let matchedDayValue = "";
+
+          if (data.days && data.days.length > 0) {
+            data.days.forEach(d => {
+              const opt = document.createElement('option');
+              opt.value = d;
+              opt.textContent = d.startsWith("วัน") ? d : `วัน${d}`;
+              daySelect.appendChild(opt);
+
+              // ถ้าตรงกับวันปัจจุบัน ให้บันทึกไว้เลือกเป็นค่าเริ่มต้น
+              if (d.includes(todayThai) || todayThai.includes(d)) {
+                matchedDayValue = d;
+              }
+            });
+
+            // ตั้งค่าเริ่มต้นเป็นวันปัจจุบัน (ถ้ามีในชีต)
+            if (matchedDayValue) {
+              daySelect.value = matchedDayValue;
+            } else {
+              daySelect.selectedIndex = 0;
+            }
+          } else {
+            daySelect.innerHTML = `<option value="พุธ">วันพุธ</option>`;
+          }
+
+          // โหลดตารางสอนทันทีหลังจากตัวเลือกพร้อม
+          loadSchedules();
         }
+      } catch (err) {
+        console.error("โหลดตัวเลือกจากชีตล้มเหลว:", err);
+        gradeSelect.innerHTML = `<option value="ปวช.1/1">ปวช.1/1</option>`;
+        daySelect.innerHTML = `<option value="พุธ">วันพุธ</option>`;
+        loadSchedules();
       }
     }
 
@@ -576,7 +621,7 @@
       const grid = document.getElementById('schedulesGrid');
       const countBadge = document.getElementById('scheduleCountBadge');
       
-      document.getElementById('scheduleDayTitle').textContent = `วัน${day}`;
+      document.getElementById('scheduleDayTitle').textContent = day.startsWith("วัน") ? day : `วัน${day}`;
 
       grid.innerHTML = `
         <div class="col-span-full py-8 text-center text-slate-400">
@@ -605,7 +650,7 @@
           grid.innerHTML = `
             <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200">
               <i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-2"></i>
-              <p class="text-sm font-bold text-slate-600">ไม่มีตารางสอนในวัน${day}</p>
+              <p class="text-sm font-bold text-slate-600">ไม่มีตารางสอนใน${day.startsWith("วัน") ? day : `วัน${day}`}</p>
               <p class="text-xs text-slate-400 mt-1">ไม่พบวิชาที่คุณสอนในวันดังกล่าวตามข้อมูลในชีต</p>
             </div>
           `;
@@ -661,12 +706,11 @@
     }
 
     /**
-     * สร้าง QR Code อัตโนมัติ (ปลอดภัย ไร้บั๊ก ReferenceError และมี Fallback)
+     * สร้าง QR Code อัตโนมัติ (SVG คมชัดสูง ปลอดภัย ไม่เกิด ReferenceError)
      */
     function generateScheduleQr(index) {
       const item = currentSchedules[index];
       
-      // บรรจุข้อมูล Autofill ทั้งหมด
       const qrPayload = {
         code: item.subjectCode || "",
         name: item.subjectName || "",
@@ -693,30 +737,23 @@
       const container = document.getElementById('qrcodeContainer');
       container.innerHTML = '';
 
-      // 1. ตรวจสอบว่ามี qrcode-generator หรือไม่
       if (typeof qrcode !== 'undefined') {
         try {
           const qr = qrcode(0, 'M');
           qr.addData(jsonStr);
           qr.make();
-          // สร้าง SVG คมชัด 100%
           container.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
           lastQrImageData = qr.createDataURL(6, 2);
         } catch (err) {
-          console.warn("ใช้ระบบรูปภาพสำรอง:", err);
           renderQrFallback(container, jsonStr);
         }
       } else {
-        // 2. ถ้าเน็ตบล็อก CDN ให้ใช้ระบบรูปภาพ Fallback ทันที
         renderQrFallback(container, jsonStr);
       }
 
       document.getElementById('qrGeneratorModal').classList.remove('hidden');
     }
 
-    /**
-     * ระบบ Fallback สร้าง QR Code หาก CDN โดนบล็อก
-     */
     function renderQrFallback(container, text) {
       const encoded = encodeURIComponent(text);
       const url = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encoded}`;
@@ -728,9 +765,6 @@
       document.getElementById('qrGeneratorModal').classList.add('hidden');
     }
 
-    /**
-     * ดาวน์โหลดรูป QR Code
-     */
     function downloadQrImage() {
       if (!lastQrImageData) return;
       const link = document.createElement('a');
@@ -778,7 +812,7 @@
     }
 
     /**
-     * เมื่อสแกน QR Code สำเร็จ: นำข้อมูล AUTOFILL จาก QR มากรอกลงฟอร์มทันที
+     * นำข้อมูล AUTOFILL จาก QR Code มากรอกลงฟอร์มทันที
      */
     function handleScanSuccess(decodedText) {
       closeScannerModal();
@@ -793,7 +827,6 @@
         const sPeriod = data.period || data.p || '';
         const sTeacherId = data.teacherId || '';
 
-        // กรอกข้อมูลอัตโนมัติ
         document.getElementById('formSubjectCode').value = sCode;
         document.getElementById('formSubjectName').value = sName;
         document.getElementById('formGrade').value = sGrade;
@@ -923,11 +956,11 @@
       if (currentTeacher) {
         document.getElementById('subOriginalTeacher').value = currentTeacher.name;
       }
-      document.getElementById('substituteModal').classList.remove('hidden');
+      document.getElementById('subSubstituteModal').classList.remove('hidden');
     }
 
     function closeSubstituteModal() {
-      document.getElementById('substituteModal').classList.add('hidden');
+      document.getElementById('subSubstituteModal').classList.add('hidden');
     }
 
     async function submitSubstitute(e) {
