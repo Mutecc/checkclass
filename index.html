@@ -153,7 +153,7 @@
   <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl z-40">
     <div class="max-w-md mx-auto px-6 py-2 flex items-center justify-between relative">
       
-      <!-- ปุ่มซ้ายมือ: แจ้งลา / ครูสอนแทน (เปิด Modal แจ้งลา) -->
+      <!-- ปุ่มซ้ายมือ: แจ้งลา / ครูสอนแทน -->
       <button onclick="openSubstituteModal()" class="flex flex-col items-center group text-slate-500 hover:text-amber-600 transition">
         <div class="w-11 h-11 rounded-2xl bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center text-amber-600 mb-1 shadow-sm">
           <i class="fa-solid fa-user-clock text-lg"></i>
@@ -343,74 +343,103 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 4: แจ้งลา / ครูสอนแทน (แก้ไข ID และเปิดได้ 100%) ================= -->
+  <!-- ================= MODAL 4: แจ้งลา / จัดการครูสอนแทนอัจฉริยะ (Smart Substitute) ================= -->
   <div id="substituteModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-      <div class="p-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between sticky top-0 z-10 shadow">
-        <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base">
-          <i class="fa-solid fa-hand-holding-hand"></i> แจ้งลา / กำหนดครูสอนแทน
-        </h3>
+    <div class="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div class="p-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-between sticky top-0 z-10 shadow">
+        <div>
+          <h3 class="font-bold flex items-center gap-2 text-sm sm:text-base">
+            <i class="fa-solid fa-hand-holding-hand"></i> แจ้งลาและกำหนดครูสอนแทน
+          </h3>
+          <p class="text-[11px] text-amber-100">ระบบตรวจสอบครูที่ว่างตลอดช่วงคาบเรียนให้อัตโนมัติ</p>
+        </div>
         <button onclick="closeSubstituteModal()" class="text-white/80 hover:text-white text-xl">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <form id="substituteForm" onsubmit="submitSubstitute(event)" class="p-5 space-y-3">
+      <form id="substituteForm" onsubmit="submitSubstitute(event)" class="p-5 space-y-3.5">
         
-        <!-- ตัวเลือกลัด: เลือกจากคาบสอนของครูในวันนี้ (ถ้ามี) -->
-        <div id="subQuickSelectBox" class="hidden bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-xs">
-          <label class="block font-bold text-amber-900 mb-1 flex items-center gap-1">
-            <i class="fa-solid fa-bolt text-amber-500"></i> เลือกคาบสอนของคุณวันนี้ (ดึงข้อมูลอัตโนมัติ):
+        <!-- ขั้นตอนที่ 1: เลือกวันที่ลา -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-slate-700">1. กำหนดวันที่ลา *</label>
+            <span id="subCalculatedDayBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              กำลังตรวจสอบวัน...
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <input type="date" id="subDate" required onchange="onSubDateChange()" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-amber-500">
+            </div>
+            <div>
+              <input type="text" id="subTerm" value="2/2569" placeholder="ภาคเรียน" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold">
+            </div>
+          </div>
+        </div>
+
+        <!-- ขั้นตอนที่ 2: เลือกคาบสอนของวันนั้น -->
+        <div class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200 space-y-2">
+          <label class="block text-xs font-bold text-amber-950 flex items-center justify-between">
+            <span>2. เลือกวิชาและคาบที่ต้องการลา (ของวันดังกล่าว) *</span>
+            <span id="subClassLoading" class="hidden text-[10px] text-amber-700"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลด...</span>
           </label>
-          <select id="subScheduleSelect" onchange="applyScheduleToSubForm()" class="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs text-slate-700">
-            <option value="">-- เลือกคาบที่ต้องการแจ้งลา --</option>
+          <select id="subClassSelect" onchange="onSubClassSelectChange()" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 shadow-sm focus:ring-amber-500">
+            <option value="">-- โปรดเลือกวันที่ก่อน เพื่อดึงคาบสอน --</option>
           </select>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <!-- รายละเอียดคาบเรียน (Autofill) -->
+        <div class="grid grid-cols-3 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">วันที่ลา/สอนแทน *</label>
-            <input type="date" id="subDate" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+            <span class="text-[10px] text-slate-400 block font-semibold">ชั้นเรียน</span>
+            <input type="text" id="subGrade" readonly required class="w-full bg-slate-200/80 rounded-lg px-2 py-1 font-bold text-slate-700 text-center">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">ภาคเรียน (Term)</label>
-            <input type="text" id="subTerm" value="2/2569" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1">ครูผู้สอนเดิม (ผู้ขอลา) *</label>
-          <input type="text" id="subOriginalTeacher" placeholder="เช่น อ.เอกวิทย์ สมาน" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1">ครูผู้สอนแทน *</label>
-          <input type="text" id="subNewTeacher" placeholder="ระบุชื่อครูที่มาสอนแทน (เช่น อ.เจะมารี มะยีตี)" required class="w-full bg-white border border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-amber-500">
-        </div>
-
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">ชั้นเรียน</label>
-            <input type="text" id="subGrade" placeholder="ปวช.1/1" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+            <span class="text-[10px] text-slate-400 block font-semibold">คาบที่</span>
+            <input type="number" id="subPeriod" readonly required class="w-full bg-slate-200/80 rounded-lg px-2 py-1 font-bold text-slate-700 text-center">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">คาบที่</label>
-            <input type="number" id="subPeriod" placeholder="3" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+            <span class="text-[10px] text-slate-400 block font-semibold">จำนวนคาบ (Span)</span>
+            <input type="number" id="subSpan" readonly required class="w-full bg-slate-200/80 rounded-lg px-2 py-1 font-bold text-slate-700 text-center">
           </div>
-          <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">จำนวนคาบ</label>
-            <input type="number" id="subSpan" value="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs">
+          <div class="col-span-3 mt-1">
+            <span class="text-[10px] text-slate-400 block font-semibold">รหัสและชื่อวิชา</span>
+            <input type="text" id="subSubjectCode" readonly required class="w-full bg-slate-200/80 rounded-lg px-2.5 py-1 font-bold text-emerald-700">
           </div>
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1">รหัสวิชา</label>
-          <input type="text" id="subSubjectCode" placeholder="เช่น 21910-2012" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+          <label class="block text-[11px] font-bold text-slate-700 mb-0.5">ครูผู้สอนเดิม (ผู้ขอลา) *</label>
+          <input type="text" id="subOriginalTeacher" placeholder="เช่น อ.เอกวิทย์ สมาน" required class="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+        </div>
+
+        <!-- ขั้นตอนที่ 3: เลือกครูสอนแทน (คัดเฉพาะผู้ที่ว่างตลอดช่วง Span เท่านั้น) -->
+        <div class="bg-emerald-50/80 p-3.5 rounded-2xl border-2 border-emerald-400 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+              <i class="fa-solid fa-user-check text-emerald-600"></i> 3. ครูผู้สอนแทน (คัดเฉพาะครูที่ว่างตลอดช่วงคาบ) *
+            </label>
+            <span id="subTeacherLoading" class="hidden text-[10px] text-emerald-700"><i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจเช็ค...</span>
+          </div>
+
+          <select id="subNewTeacher" required class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 shadow-sm focus:ring-emerald-500">
+            <option value="">-- รอการตรวจสอบครูที่ว่าง --</option>
+          </select>
+          <div id="subTeacherNote" class="text-[10px] text-slate-500 italic">
+            * ระบบตรวจสอบตารางสอนจริงแล้วว่าไม่ติดสอนตลอดช่วงคาบติดต่อกัน
+          </div>
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-slate-700 mb-1">เหตุผลการลา</label>
-          <input type="text" id="subReason" placeholder="เช่น ลากิจ, ไปราชการ, หมอนัดตรวจ" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs">
+          <label class="block text-[11px] font-bold text-slate-700 mb-0.5">เหตุผลการลา *</label>
+          <select id="subReason" required class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold">
+            <option value="ลากิจ">ลากิจ</option>
+            <option value="ไปราชการ">ไปราชการ</option>
+            <option value="ลาป่วย">ลาป่วย</option>
+            <option value="หมอนัดตรวจ">หมอนัดตรวจ</option>
+            <option value="อบรมเชิงปฏิบัติการ">อบรมเชิงปฏิบัติการ</option>
+          </select>
         </div>
 
         <div class="pt-2 flex gap-2">
@@ -478,7 +507,7 @@
   </div>
 
 
-  <!-- ================= JAVASCRIPT ================= -->
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTb6E8u-W8oNaAP42Af-4T42lb7mmKpF1cxm3vcyYmlc_Ffm5Ex2Ywz2y55Ru1DQpn/exec";
 
@@ -486,6 +515,7 @@
     let currentSchedules = [];
     let html5QrCode = null;
     let lastQrImageData = "";
+    let teacherDayClassesList = []; // เก็บวิชาของวันนั้นสำหรับ Modal แจ้งลา
 
     const DAY_MAP = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 
@@ -514,9 +544,6 @@
       setInterval(update, 1000);
     }
 
-    /**
-     * ดึงตัวเลือกชั้นเรียนและวันจากฐานข้อมูลในชีต Schedules อัตโนมัติ
-     */
     async function loadFilterOptionsFromSheet() {
       const gradeSelect = document.getElementById('gradeSelect');
       const daySelect = document.getElementById('daySelect');
@@ -935,66 +962,158 @@
     }
 
     /**
-     * ================= ฟังก์ชันจัดการแจ้งลา / สอนแทน (แก้ไขเรียบร้อย) =================
+     * ================= ระบบแจ้งลา & หาครูสอนแทนอัจฉริยะ (Smart Substitute) =================
      */
     function openSubstituteModal() {
-      // 1. กำหนดวันที่ลาเป็นปัจจุบัน
-      if (!document.getElementById('subDate').value) {
-        document.getElementById('subDate').valueAsDate = new Date();
+      const dateInput = document.getElementById('subDate');
+      if (!dateInput.value) {
+        dateInput.valueAsDate = new Date();
       }
 
-      // 2. ถ้าครูล็อกอิน ให้กรอกชื่อครูผู้ขอลาทันที
       if (currentTeacher) {
         document.getElementById('subOriginalTeacher').value = currentTeacher.name;
       }
 
-      // 3. เตรียมตัวเลือกลัดจากคาบสอนของครูในวันนี้ (ถ้ามี)
-      const selectBox = document.getElementById('subQuickSelectBox');
-      const select = document.getElementById('subScheduleSelect');
-      
-      if (currentSchedules && currentSchedules.length > 0) {
-        select.innerHTML = '<option value="">-- คลิกเลือกคาบที่ต้องการลา (กรอกข้อมูลอัตโนมัติ) --</option>';
-        currentSchedules.forEach((sch, idx) => {
-          const opt = document.createElement('option');
-          opt.value = idx;
-          opt.textContent = `คาบที่ ${sch.period}: ${sch.subjectName} (${sch.grade})`;
-          select.appendChild(opt);
-        });
-        selectBox.classList.remove('hidden');
-      } else {
-        selectBox.classList.add('hidden');
-      }
-
-      // 4. เปิดหน้าต่าง PopUp (แก้ ID ให้ตรงกับ HTML)
       document.getElementById('substituteModal').classList.remove('hidden');
-    }
 
-    /**
-     * นำข้อมูลคาบเรียนที่เลือก มากรอกลงฟอร์มแจ้งลาอัตโนมัติ
-     */
-    function applyScheduleToSubForm() {
-      const idx = document.getElementById('subScheduleSelect').value;
-      if (idx === "") return;
-
-      const sch = currentSchedules[parseInt(idx)];
-      if (sch) {
-        document.getElementById('subGrade').value = sch.grade || "";
-        document.getElementById('subPeriod').value = sch.period || 1;
-        document.getElementById('subSpan').value = sch.span || 2;
-        document.getElementById('subSubjectCode').value = sch.subjectCode || "";
-        if (sch.term) document.getElementById('subTerm').value = sch.term;
-        if (sch.teacher && !currentTeacher) {
-          document.getElementById('subOriginalTeacher').value = sch.teacher;
-        }
-      }
+      // ตรวจสอบวันและดึงคาบสอนของวันนั้นทันที
+      onSubDateChange();
     }
 
     function closeSubstituteModal() {
       document.getElementById('substituteModal').classList.add('hidden');
     }
 
+    /**
+     * เมื่อผู้ใช้เปลี่ยนวันที่: คำนวณวันในสัปดาห์อัตโนมัติ และดึงคาบสอนของวันนั้นมาให้เลือก
+     */
+    async function onSubDateChange() {
+      const dateVal = document.getElementById('subDate').value;
+      if (!dateVal) return;
+
+      const selectedDate = new Date(dateVal + 'T00:00:00');
+      const dayName = DAY_MAP[selectedDate.getDay()];
+      document.getElementById('subCalculatedDayBadge').textContent = `📅 วัน${dayName}`;
+
+      const classSelect = document.getElementById('subClassSelect');
+      const loading = document.getElementById('subClassLoading');
+      classSelect.innerHTML = `<option value="">กำลังดึงคาบสอนของวัน${dayName}...</option>`;
+      loading.classList.remove('hidden');
+
+      const teacherName = currentTeacher ? currentTeacher.name : document.getElementById('subOriginalTeacher').value;
+      const teacherId = currentTeacher ? currentTeacher.id : "";
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getTeacherClassesByDate&day=${encodeURIComponent(dayName)}&teacher=${encodeURIComponent(teacherName)}&teacherId=${encodeURIComponent(teacherId)}`);
+        const data = await res.json();
+
+        loading.classList.add('hidden');
+        teacherDayClassesList = data.classes || [];
+
+        if (teacherDayClassesList.length > 0) {
+          classSelect.innerHTML = `<option value="">-- คลิกเลือกวิชาที่ต้องการลา (${teacherDayClassesList.length} คาบ) --</option>`;
+          teacherDayClassesList.forEach((cls, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.textContent = `คาบที่ ${cls.period} (${cls.span} คาบ): ${cls.subjectCode} ${cls.subjectName} [${cls.grade}]`;
+            classSelect.appendChild(opt);
+          });
+        } else {
+          classSelect.innerHTML = `<option value="">ไม่มีคาบสอนในวัน${dayName}</option>`;
+          clearSubFields();
+        }
+      } catch (err) {
+        loading.classList.add('hidden');
+        classSelect.innerHTML = `<option value="">ดึงข้อมูลคาบสอนไม่สำเร็จ</option>`;
+      }
+    }
+
+    function clearSubFields() {
+      document.getElementById('subGrade').value = "";
+      document.getElementById('subPeriod').value = "";
+      document.getElementById('subSpan').value = "";
+      document.getElementById('subSubjectCode').value = "";
+      document.getElementById('subNewTeacher').innerHTML = `<option value="">-- กรุณาเลือกคาบที่สอนก่อน --</option>`;
+    }
+
+    /**
+     * เมื่อเลือกวิชาที่ต้องการลา: Auto-fill ข้อมูล และค้นหาครูที่ว่างตลอดช่วง Span ทันที!
+     */
+    async function onSubClassSelectChange() {
+      const idx = document.getElementById('subClassSelect').value;
+      if (idx === "") {
+        clearSubFields();
+        return;
+      }
+
+      const cls = teacherDayClassesList[parseInt(idx)];
+      if (!cls) return;
+
+      document.getElementById('subGrade').value = cls.grade || "";
+      document.getElementById('subPeriod').value = cls.period || 1;
+      document.getElementById('subSpan').value = cls.span || 1;
+      document.getElementById('subSubjectCode').value = `${cls.subjectCode} ${cls.subjectName}`;
+      if (cls.term) document.getElementById('subTerm').value = cls.term;
+
+      // ค้นหาครูที่ว่างตลอดช่วง Span (เช่น คาบ 3-4) ทันที!
+      findAvailableSubstitutes(cls.period, cls.span);
+    }
+
+    /**
+     * เรียก API ค้นหาครูที่ว่างตลอดช่วงคาบติดต่อกัน
+     */
+    async function findAvailableSubstitutes(startPeriod, span) {
+      const dateVal = document.getElementById('subDate').value;
+      const selectedDate = new Date(dateVal + 'T00:00:00');
+      const dayName = DAY_MAP[selectedDate.getDay()];
+      const teacherName = currentTeacher ? currentTeacher.name : document.getElementById('subOriginalTeacher').value;
+
+      const teacherSelect = document.getElementById('subNewTeacher');
+      const teacherLoading = document.getElementById('subTeacherLoading');
+      const teacherNote = document.getElementById('subTeacherNote');
+
+      teacherSelect.innerHTML = `<option value="">กำลังค้นหาครูที่ว่างตลอดคาบ ${startPeriod} ถึง ${startPeriod + span - 1}...</option>`;
+      teacherLoading.classList.remove('hidden');
+
+      try {
+        const apiUrl = `${SCRIPT_URL}?action=getAvailableSubstitutes&date=${encodeURIComponent(dateVal)}&day=${encodeURIComponent(dayName)}&period=${startPeriod}&span=${span}&absentTeacher=${encodeURIComponent(teacherName)}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        teacherLoading.classList.add('hidden');
+
+        if (data.status === "success" && data.availableTeachers && data.availableTeachers.length > 0) {
+          teacherSelect.innerHTML = `<option value="">-- เลือกครูสอนแทน (ว่าง ${data.availableTeachers.length} ท่าน) --</option>`;
+          data.availableTeachers.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = `✅ ${t} (ว่างตลอดคาบ ${data.startPeriod}-${data.endPeriod})`;
+            teacherSelect.appendChild(opt);
+          });
+          teacherNote.innerHTML = `<span class="text-emerald-700 font-bold">พบครูว่าง ${data.availableTeachers.length} ท่าน ที่ไม่ติดสอนตลอด ${span} คาบนี้</span>`;
+        } else {
+          teacherSelect.innerHTML = `<option value="">⚠️ ไม่มีครูท่านใดว่างตลอดคาบ ${startPeriod}-${startPeriod + span - 1}</option>`;
+          teacherNote.innerHTML = `<span class="text-rose-600 font-bold">ไม่มีครูที่ว่างติดต่อกัน ${span} คาบในช่วงเวลานี้</span>`;
+        }
+      } catch (err) {
+        teacherLoading.classList.add('hidden');
+        teacherSelect.innerHTML = `<option value="">ตรวจสอบครูว่างไม่สำเร็จ</option>`;
+      }
+    }
+
     async function submitSubstitute(e) {
       e.preventDefault();
+      const newTeacher = document.getElementById('subNewTeacher').value;
+      if (!newTeacher) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'กรุณาเลือกครูผู้สอนแทน',
+          text: 'โปรดเลือกครูผู้สอนแทนจากรายชื่อที่ว่างในคาบนี้',
+          confirmButtonColor: '#f59e0b'
+        });
+        return;
+      }
+
       const btn = document.getElementById('btnSubmitSub');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...`;
@@ -1004,7 +1123,7 @@
         date: document.getElementById('subDate').value,
         term: document.getElementById('subTerm').value,
         absentTeacher: document.getElementById('subOriginalTeacher').value,
-        subTeacher: document.getElementById('subNewTeacher').value,
+        subTeacher: newTeacher,
         grade: document.getElementById('subGrade').value,
         period: document.getElementById('subPeriod').value,
         span: document.getElementById('subSpan').value,
@@ -1023,7 +1142,7 @@
         Swal.fire({
           icon: 'success',
           title: 'แจ้งสอนแทนสำเร็จ!',
-          text: 'บันทึกข้อมูลครูสอนแทนลงในชีต Substitutes เรียบร้อยแล้ว',
+          text: `มอบหมายให้ ${newTeacher} สอนแทนเรียบร้อยแล้ว`,
           confirmButtonColor: '#f59e0b'
         });
         closeSubstituteModal();
@@ -1032,7 +1151,7 @@
         Swal.fire({
           icon: 'success',
           title: 'แจ้งสอนแทนสำเร็จ',
-          text: 'ส่งข้อมูลเรียบร้อยแล้ว',
+          text: 'บันทึกข้อมูลเรียบร้อยแล้ว',
           confirmButtonColor: '#f59e0b'
         });
         closeSubstituteModal();
